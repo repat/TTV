@@ -6,16 +6,24 @@ import de.uniba.wiai.lspi.chord.service.NotifyCallback;
 import de.uniba.wiai.lspi.chord.service.PropertiesLoader;
 import de.uniba.wiai.lspi.chord.service.ServiceException;
 import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Game {
 
 	private static ChordImpl chordImpl;
 	private static NotifyCallback myNotifyCallback;
 	private static final String protocol = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
+	private static final BigInteger biggestNodeKey = new BigDecimal(2.0).pow(160).toBigInteger().subtract(BigInteger.ONE);
 
 	public static void main(String[] args) {
 		create();
-//		join("192.168.1.1");
+//		join("192.168.1.2");
 	}
 
 	/**
@@ -29,9 +37,11 @@ public class Game {
 		PropertiesLoader.loadPropertyFile();
 		URL localURL = null;
 		try {
-			localURL = new URL(protocol + "://localhost:" + port + "/");
+			localURL = new URL(protocol + "://" + Inet4Address.getLocalHost().getHostAddress() + ":" + port + "/");
 		} catch (MalformedURLException e) {
 			throw new RuntimeException(e);
+		} catch (UnknownHostException e) {
+			Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, e);
 		}
 
 		chordImpl = new ChordImpl();
@@ -53,15 +63,21 @@ public class Game {
 			throw new RuntimeException("Could not create DHT!", e);
 		}
 
+		System.out.println("MaxID:  " + biggestNodeKey);
+		System.out.println("NodeId: " + chordImpl.getID().toBigInteger());
+
 		String data = "Just an example.";
 		StringKey myKey = new StringKey(data);
 
 		while (true) {
 			try {
-				System.out.println(chordImpl.retrieve(myKey));
+				Thread.sleep(1000);
+				if (chordImpl.retrieve(myKey).size() > 0) {
+					System.out.println(chordImpl.retrieve(myKey));
+				}
 			} catch (Exception e) {
 				System.out.println("stacktrace:");
-				System.out.println(e.getStackTrace().toString());
+				System.out.println(Arrays.toString(e.getStackTrace()));
 			}
 		}
 	}
@@ -88,8 +104,12 @@ public class Game {
 			throw new RuntimeException("Could not join DHT!", e);
 		}
 
-		String data = "Just an example .";
+		System.out.println("MaxID:  " + biggestNodeKey);
+		System.out.println("NodeId: " + chordImpl.getID().toBigInteger());
+
+		String data = "Just an example.";
 		StringKey myKey = new StringKey(data);
+
 		chordImpl.insert(myKey, data);
 	}
 }
