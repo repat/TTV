@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 
-import de.uniba.wiai.lspi.chord.console.command.entry.Value;
 import de.uniba.wiai.lspi.chord.data.URL;
 import de.uniba.wiai.lspi.chord.service.NotifyCallback;
 import de.uniba.wiai.lspi.chord.service.PropertiesLoader;
@@ -34,7 +33,7 @@ public class Game {
 	/**
 	 * initializes the create() or init() method and should not be called
 	 * manually
-	 * 
+	 *
 	 * @param port
 	 *            the port of the local chord service
 	 * @return the URL the local chord runs on
@@ -53,7 +52,7 @@ public class Game {
 		chordImpl = new ChordImpl();
 		myNotifyCallback = new GameNotify();
 		chordImpl.setCallback(myNotifyCallback);
-		
+
 
 		return localURL;
 	}
@@ -94,7 +93,7 @@ public class Game {
 
 	/**
 	 * joins an existing chord instance
-	 * 
+	 *
 	 * @param ip
 	 *            the target IP you want to connect to in dot notation
 	 * @throws RuntimeException
@@ -119,6 +118,6 @@ public class Game {
 		String value = "Just an example.";
 		StringKey myKey = new StringKey(value);
 		chordImpl.insert(myKey, value);
-		
+
 	}
 }

@@ -53,7 +53,7 @@ public class ChordHost {
 //		while (true) {
 //			try {
 //                Thread.sleep(1000);
-//                // just prints result, when the number of entries has changed (stops spaming console)
+                // just prints result, when the number of entries has changed (stops spaming console)
 //                if (chordImpl.retrieve(myKey).size() != numberOfShips) {
 //                    System.out.println(chordImpl.retrieve(myKey));
 //                    numberOfShips = chordImpl.retrieve(myKey).size();

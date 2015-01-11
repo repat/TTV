@@ -10,28 +10,40 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ChordClient {
 
 	private static ChordImpl chordImpl;
-	// private static final StringKey myKey = new StringKey("Just an example.");
 	private static final String protocol = URL.KNOWN_PROTOCOLS
 			.get(URL.SOCKET_PROTOCOL);
 	private static final BigInteger biggestNodeKey = new BigDecimal(2.0)
 			.pow(160).toBigInteger().subtract(BigInteger.ONE);
-	private static final String ip = "localhost";
+    private static final String ip = "localhost";
+
+    private static final BigInteger[] sectors = new BigInteger[100];
+    private static final boolean[] ships = new boolean[100];
 
 	public static void main(String[] args) {
-		joinChord();
+        joinChord();
+        calculateSectors();
+        setShips();
 
-		setShips();
 
-		shoot("1");
-		shoot("2");
-
-	}
+        shoot(0);
+        shoot(1);
+        shoot(2);
+        shoot(3);
+        shoot(4);
+        shoot(5);
+        shoot(6);
+        shoot(7);
+        shoot(8);
+        shoot(9);
+        shoot(10);
+    }
 
 	private static void joinChord() throws RuntimeException {
 		PropertiesLoader.loadPropertyFile();
@@ -76,26 +88,71 @@ public class ChordClient {
 		System.out.println(chordImpl.printSuccessorList());
 	}
 
-	// man müsste die Schiffe natürlich auf den zugewiesenen Bereich verteilen.
-	private static void setShips() {
-		chordImpl.insert(new StringKey("1"), "Schiff");
-		chordImpl.insert(new StringKey("3"), "Schiff");
-		chordImpl.insert(new StringKey("7"), "Schiff");
-		chordImpl.insert(new StringKey("9"), "Schiff");
-	}
+    /**
+     * Habe mit Mitja geredet, er sagte mir, dass wir den Bereich von unsere ID zu der des
+     * vorherigen nutzen sollen. Wir müssen wohl diesen Bereich in 100 Teile teilen und 10 davon mit
+     * Schiffen besetzen.
+     */
+    private static void calculateSectors() {
 
-	// Man schießt noch auf sich selber, aber geht das irgendwie in die richtige
-	// Richtung?
-	private static void shoot(String sektor) {
-		StringKey key = new StringKey(sektor);
+        BigInteger myID = chordImpl.getID().toBigInteger();
+        BigInteger predecessorID = chordImpl.getPredecessorID().toBigInteger();
+//        System.out.println("myID:          " + myID);
+//        System.out.println("predecessorID: " + predecessorID);
 
-		if (chordImpl.retrieve(key).size() > 0) {
+        BigInteger distance = myID.subtract(predecessorID);
+        BigInteger step = distance.divide(BigInteger.valueOf(100L));
+
+        for (int i = 0; i < 100; i++) {
+            sectors[i] = BigInteger.valueOf((long) i).multiply(step);
+//            System.out.println("sector " + (i + 1) + ": " + sectors[i]);
+        }
+
+    }
+
+    /**
+     * setzt zufällig 10 Schiffe auf einen der 100 Sektoren
+     */
+    private static void setShips() {
+
+        Random rnd = new Random();
+        int random;
+
+        for (int i = 0; i < 10; i++) {
+
+            do {
+                random = rnd.nextInt(100);
+            } while (ships[random] == true);
+
+            ships[random] = true;
+            chordImpl.insert(new StringKey(sectors[random].toString()), "ship");
+        }
+
+        for (int i = 0; i < 100; i++) {
+            System.out.println("ship " + (i + 1) + ": " + ships[i]);
+        }
+
+//		chordImpl.insert(new StringKey("1"), "Schiff");
+//		chordImpl.insert(new StringKey("3"), "Schiff");
+//		chordImpl.insert(new StringKey("7"), "Schiff");
+//		chordImpl.insert(new StringKey("9"), "Schiff");
+    }
+
+    /**
+     * Passt so noch überhaupt nicht
+     *
+     * @param sector
+     */
+    private static void shoot(int sector) {
+        StringKey key = new StringKey(sectors[sector].toString());
+
+        if (ships[sector]) {
 			chordImpl.remove(key, "Schiff");
-			System.out.println("Schiff in Sektor " + sektor + " getroffen!");// Broadcast
-			// wird noch nicht ausgewertet
+            System.out.println("Schiff in Sektor " + (sector + 1) + " getroffen!");
+			//wird noch nicht ausgewertet
 			chordImpl.broadcast(chordImpl.getID(), Boolean.TRUE);
 		} else {
-			System.out.println("Kein Schiff in Sektor " + sektor + "!");
+            System.out.println("Kein Schiff in Sektor " + (sector + 1) + "!");
 			chordImpl.broadcast(chordImpl.getID(), Boolean.FALSE);
 		}
 	}
