@@ -30,6 +30,7 @@ package de.uniba.wiai.lspi.chord.service.impl;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.DEBUG;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.INFO;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,12 +69,12 @@ public final class NodeImpl extends Node {
 	private ChordImpl impl;
 
 	/**
-	 * Object logger.
-	 * The name of the logger is the name of this class with the nodeID appended. 
-	 * The length of the nodeID depends on the number of bytes that are displayed 
-	 * when the ID is shown in Hex-Representation. See documentation of {@link ID}. 
-	 * E.g. de.uniba.wiai.lspi.chord.service.impl.NodeImpl.FF FF FF FF if the number 
-	 * of displayed Bytes of an ID is 4. 
+	 * Object logger. The name of the logger is the name of this class with the
+	 * nodeID appended. The length of the nodeID depends on the number of bytes
+	 * that are displayed when the ID is shown in Hex-Representation. See
+	 * documentation of {@link ID}. E.g.
+	 * de.uniba.wiai.lspi.chord.service.impl.NodeImpl.FF FF FF FF if the number
+	 * of displayed Bytes of an ID is 4.
 	 */
 	private Logger logger;
 
@@ -93,8 +94,8 @@ public final class NodeImpl extends Node {
 	 * this node.
 	 */
 	private Executor asyncExecutor;
-	
-	private Lock notifyLock; 
+
+	private Lock notifyLock;
 
 	/**
 	 * Creates that part of the local node which answers remote requests by
@@ -113,16 +114,18 @@ public final class NodeImpl extends Node {
 	 * @throws IllegalArgumentException
 	 *             If any of the parameter has value <code>null</code>.
 	 */
-	NodeImpl(ChordImpl impl, ID nodeID, URL nodeURL, NotifyCallback nodeCallback, References references,
-			Entries entries) {
+	NodeImpl(ChordImpl impl, ID nodeID, URL nodeURL,
+			NotifyCallback nodeCallback, References references, Entries entries) {
 
 		if (impl == null || nodeID == null || nodeURL == null
-				|| references == null || entries == null || nodeCallback == null) {
+				|| references == null || entries == null
+				|| nodeCallback == null) {
 			throw new IllegalArgumentException(
 					"Parameters of the constructor may not have a null value!");
 		}
 
-		this.logger = Logger.getLogger(NodeImpl.class.getName() + "." + nodeID.toString());
+		this.logger = Logger.getLogger(NodeImpl.class.getName() + "."
+				+ nodeID.toString());
 
 		this.impl = impl;
 		this.asyncExecutor = impl.getAsyncExecutor();
@@ -131,8 +134,8 @@ public final class NodeImpl extends Node {
 		this.notifyCallback = nodeCallback;
 		this.references = references;
 		this.entries = entries;
-		this.notifyLock = new ReentrantLock(true); 
-		
+		this.notifyLock = new ReentrantLock(true);
+
 		// create endpoint for incoming connections
 		this.myEndpoint = Endpoint.createEndpoint(this, nodeURL);
 		this.myEndpoint.listen();
@@ -168,9 +171,10 @@ public final class NodeImpl extends Node {
 	@Override
 	public final List<Node> notify(Node potentialPredecessor) {
 		/*
-		 * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008. sven.
+		 * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008.
+		 * sven.
 		 */
-		this.notifyLock.lock(); 
+		this.notifyLock.lock();
 		try {
 			// the result will contain the list of successors as well as the
 			// predecessor of this node
@@ -180,17 +184,17 @@ public final class NodeImpl extends Node {
 			if (this.references.getPredecessor() != null) {
 				result.add(this.references.getPredecessor());
 			} else {
-				result.add(potentialPredecessor); 
+				result.add(potentialPredecessor);
 			}
 			result.addAll(this.references.getSuccessors());
 
-//			 add potential predecessor to successor list and finger table and
+			// add potential predecessor to successor list and finger table and
 			// set
 			// it as predecessor if no better predecessor is available
-			this.references.addReferenceAsPredecessor(potentialPredecessor);			
+			this.references.addReferenceAsPredecessor(potentialPredecessor);
 			return result;
 		} finally {
-			this.notifyLock.unlock(); 
+			this.notifyLock.unlock();
 		}
 	}
 
@@ -201,9 +205,10 @@ public final class NodeImpl extends Node {
 	public final RefsAndEntries notifyAndCopyEntries(Node potentialPredecessor)
 			throws CommunicationException {
 		/*
-		 * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008. sven.
+		 * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008.
+		 * sven.
 		 */
-		this.notifyLock.lock(); 
+		this.notifyLock.lock();
 		try {
 			// copy all entries which lie between the local node ID and the ID
 			// of
@@ -215,7 +220,7 @@ public final class NodeImpl extends Node {
 			return new RefsAndEntries(this.notify(potentialPredecessor),
 					copiedEntries);
 		} finally {
-			this.notifyLock.unlock(); 
+			this.notifyLock.unlock();
 		}
 	}
 
@@ -244,7 +249,7 @@ public final class NodeImpl extends Node {
 				|| !toInsert.getId().isInInterval(
 						this.references.getPredecessor().getNodeID(),
 						this.nodeID)) {
-			this.references.getPredecessor().insertEntry(toInsert); 
+			this.references.getPredecessor().insertEntry(toInsert);
 			return;
 		}
 
@@ -376,9 +381,10 @@ public final class NodeImpl extends Node {
 
 		// Possible, but rare situation: a new node has joined which now is
 		// responsible for the id!
-		if ( (this.references.getPredecessor() != null)
-			  && (!id.isInInterval(this.references.getPredecessor().getNodeID(), this.nodeID)) 
-			  && (!this.nodeID.equals(id)) ) {
+		if ((this.references.getPredecessor() != null)
+				&& (!id.isInInterval(this.references.getPredecessor()
+						.getNodeID(), this.nodeID))
+				&& (!this.nodeID.equals(id))) {
 			this.logger.fatal("The rare situation has occured at time "
 					+ System.currentTimeMillis() + ", id to look up=" + id
 					+ ", id of local node=" + this.nodeID
@@ -425,17 +431,25 @@ public final class NodeImpl extends Node {
 	final Executor getAsyncExecutor() {
 		return this.asyncExecutor;
 	}
-	
-	// TODO: implement this function in TTP
+
+	// TODO: implement this function in TTVP
 	@Override
 	public final void broadcast(Broadcast info) throws CommunicationException {
 		if (this.logger.isEnabledFor(DEBUG)) {
 			this.logger.debug(" Send broadcast message");
 		}
-		
+
+		List<Node> fingerTable = impl.getFingerTable();
+		Collections.sort(fingerTable);
+
+		for (int i = 0; i <= fingerTable.size() - 1; i++) {
+
+		}
+
 		// finally inform application
 		if (this.notifyCallback != null) {
-			this.notifyCallback.broadcast(info.getSource(), info.getTarget(), info.getHit());
+			this.notifyCallback.broadcast(info.getSource(), info.getTarget(),
+					info.getHit());
 		}
 	}
 

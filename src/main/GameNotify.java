@@ -7,14 +7,14 @@ public class GameNotify implements NotifyCallback {
 
 	@Override
 	public void retrieved(ID target) {
-		// TODO Auto-generated method stub
-		
+		System.out.println("retrieved()[ID(target): " + target + "]");
+
 	}
 
 	@Override
 	public void broadcast(ID source, ID target, Boolean hit) {
-		// TODO Auto-generated method stub
-		
+		System.out.println("broadcast()[ID(source): " + source
+				+ ", ID(target): " + target + ", Boolean(hit): " + hit + "]");
 	}
 
 }
