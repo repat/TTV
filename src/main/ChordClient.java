@@ -22,8 +22,10 @@ public class ChordClient {
 			.subtract(BigInteger.ONE);
 	private static final String ip = "localhost";
 
-	public static final BigInteger[] sectors = new BigInteger[100];
-	public static final boolean[] ships = new boolean[100];
+    private static final BigInteger[] sectors = new BigInteger[100];
+    private static final boolean[] ships = new boolean[100];
+    private static BigInteger myID;
+    private static BigInteger predecessorID;
 
 	public static void main(String[] args) {
 		ChordClient cc = new ChordClient();
@@ -35,19 +37,10 @@ public class ChordClient {
 		calculateSectors();
 		setShips();
 
-		boolean[] s = ShipsAndSectors.getInstance().getShips();
-		System.out.println("maxID :   " + biggestID);
-
-        shoot(getIdUnsigned(sectors[0].toByteArray()));
-        shoot(getIdUnsigned(sectors[1].toByteArray()));
-        shoot(getIdUnsigned(sectors[2].toByteArray()));
-        shoot(getIdUnsigned(sectors[3].toByteArray()));
-        shoot(getIdUnsigned(sectors[4].toByteArray()));
-        shoot(getIdUnsigned(sectors[5].toByteArray()));
-        shoot(getIdUnsigned(sectors[6].toByteArray()));
-        shoot(getIdUnsigned(sectors[7].toByteArray()));
-        shoot(getIdUnsigned(sectors[8].toByteArray()));
-        shoot(getIdUnsigned(sectors[9].toByteArray()));
+//		System.out.println("maxID :   " + biggestID);
+        for (int i = 0; i < 100; i++) {
+            shoot(getIdUnsigned(sectors[i].toByteArray()));
+        }
     }
 
     private static ID getIdUnsigned(byte[] id) {
@@ -82,7 +75,7 @@ public class ChordClient {
 
 		chordImpl = new ChordImpl();
 		GameNotify myNotifyCallback = new GameNotify();
-		myNotifyCallback.setChordClient(this);
+        myNotifyCallback.setChordClient(this, chordImpl);
 		chordImpl.setCallback(myNotifyCallback);
 
 		URL bootstrapURL = null;
@@ -118,8 +111,8 @@ public class ChordClient {
 	 */
 	private void calculateSectors() {
 		BigInteger distance;
-		BigInteger myID = chordImpl.getID().toBigInteger();
-		BigInteger predecessorID = chordImpl.getPredecessorID().toBigInteger();
+		myID = chordImpl.getID().toBigInteger();
+		predecessorID = chordImpl.getPredecessorID().toBigInteger();
 		// System.out.println("myID:          " + myID);
 		// System.out.println("predecessorID: " + predecessorID);
 
@@ -129,7 +122,7 @@ public class ChordClient {
 		} else {
 			distance = biggestID.subtract(predecessorID).add(myID);
 		}
-		// System.out.println("distance:      " + distance);
+//		 System.out.println("distance:      " + distance);
 
 		BigInteger step = distance.divide(BigInteger.valueOf(100L));
 
@@ -139,7 +132,7 @@ public class ChordClient {
 					.add(BigInteger.valueOf((long) i).multiply(step))
 					.add(BigInteger.ONE).mod(biggestID);
 
-			// System.out.println("sector " + (i + 1) + ": " + sectors[i]);
+//			 System.out.println("sector " + (i + 1) + ": " + sectors[i]);
 		}
 	}
 
@@ -170,7 +163,7 @@ public class ChordClient {
 	 * @param sector
 	 */
 	private void shoot(ID sector) {
-		chordImpl.retrieve(sector);
+        chordImpl.retrieve(sector);
 	}
 
 	private void gotHit() {
@@ -187,5 +180,18 @@ public class ChordClient {
 		// chordImpl.broadcast(chordImpl.getID(), Boolean.FALSE);
 		// }
 	}
+
+    public BigInteger[] getSectors() {
+        return sectors;
+    }
+
+    public boolean[] getShips() {
+        return ships;
+    }
+
+    public BigInteger getMyID() {
+        return myID;
+    }
+
 
 }
