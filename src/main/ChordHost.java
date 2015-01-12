@@ -10,7 +10,6 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,7 +17,6 @@ public class ChordHost {
 
 	private static final String protocol = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
     private static final BigInteger biggestNodeKey = new BigDecimal(2.0).pow(160).toBigInteger().subtract(BigInteger.ONE);
-    private static int numberOfShips = 0;
 
 	public static void main(String[] args) {
 		PropertiesLoader.loadPropertyFile();

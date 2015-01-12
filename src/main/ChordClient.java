@@ -2,17 +2,14 @@ package main;
 
 import de.uniba.wiai.lspi.chord.data.ID;
 import de.uniba.wiai.lspi.chord.data.URL;
-import de.uniba.wiai.lspi.chord.service.NotifyCallback;
 import de.uniba.wiai.lspi.chord.service.PropertiesLoader;
 import de.uniba.wiai.lspi.chord.service.ServiceException;
 import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Random;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,46 +38,33 @@ public class ChordClient {
 		boolean[] s = ShipsAndSectors.getInstance().getShips();
 		System.out.println("maxID :   " + biggestID);
 
-		// System.out.println("biggestID length:  " + biggestID.bitCount());
-		//
-		// byte[] test = new byte[biggestID.toByteArray().length];
-		// System.arraycopy(biggestID.toByteArray(), 0, test, 0,
-		// biggestID.toByteArray().length);
-		// System.out.println("biggestID length2: " + test.length);
-		//
-		// ID test = new ID(biggestID.toByteArray());
-		//
-		// System.out.println("value: " + test);
-		// System.out.println("value: " + biggestID.toByteArray().length);
-		// System.out.println("length: " + test.getLength());
+        shoot(getIdUnsigned(sectors[0].toByteArray()));
+        shoot(getIdUnsigned(sectors[1].toByteArray()));
+        shoot(getIdUnsigned(sectors[2].toByteArray()));
+        shoot(getIdUnsigned(sectors[3].toByteArray()));
+        shoot(getIdUnsigned(sectors[4].toByteArray()));
+        shoot(getIdUnsigned(sectors[5].toByteArray()));
+        shoot(getIdUnsigned(sectors[6].toByteArray()));
+        shoot(getIdUnsigned(sectors[7].toByteArray()));
+        shoot(getIdUnsigned(sectors[8].toByteArray()));
+        shoot(getIdUnsigned(sectors[9].toByteArray()));
+    }
 
-		// shoot(test);
-
-		// shoot(new ID(sectors[0].toByteArray()));
-		// shoot(new ID(sectors[1].toByteArray()));
-		// shoot(new ID(sectors[2].toByteArray()));
-		// shoot(new ID(sectors[3].toByteArray()));
-		// shoot(new ID(sectors[4].toByteArray()));
-		// shoot(new ID(sectors[5].toByteArray()));
-		// shoot(new ID(sectors[6].toByteArray()));
-		// shoot(new ID(sectors[7].toByteArray()));
-		// shoot(new ID(sectors[8].toByteArray()));
-		// shoot(new ID(sectors[9].toByteArray()));
-		// shoot(new ID(sectors[10].toByteArray()));
-	}
-
-	public int byteArrayToInt(byte[] b) {
-		int value = 0;
-		for (int i = 0; i < 4; i++) {
-			int shift = (4 - 1 - i) * 8;
-			value += (b[i] & 0x000000FF) << shift;
-		}
-		return value;
-	}
+    private static ID getIdUnsigned(byte[] id) {
+        ID result;
+        if (id[0] == 0) {
+            byte[] tmp = new byte[id.length - 1];
+            System.arraycopy(id, 1, tmp, 0, tmp.length);
+            result = new ID(tmp);
+        } else {
+            result = new ID(id);
+        }
+        return result;
+    }
 
 	/**
 	 * joins the Chord Network
-	 * 
+	 *
 	 * @throws RuntimeException
 	 */
 	private void joinChord() throws RuntimeException {
@@ -182,7 +166,7 @@ public class ChordClient {
 
 	/**
 	 * Passt so noch überhaupt nicht
-	 * 
+	 *
 	 * @param sector
 	 */
 	private void shoot(ID sector) {
