@@ -15,9 +15,9 @@ public class GameNotify implements NotifyCallback {
     private ChordClient chordClient = null;
     private ChordImpl chordImpl = null;
     private int ship = 0;
-    private List<BroadcastLog> bl = new ArrayList<BroadcastLog>();
-    private Map<ID, ID> uniquePlayers = new HashMap<ID, ID>();
-    private List<ID> dumbPlayers = new ArrayList<ID>();
+	private final List<BroadcastLog> bl = new ArrayList<>();
+	private final Map<ID, ID> uniquePlayers = new HashMap<>();
+	private final List<ID> dumbPlayers = new ArrayList<>();
 
     public void setChordClient(ChordClient chordClient, ChordImpl chordImpl) {
         this.chordClient = chordClient;
@@ -32,7 +32,7 @@ public class GameNotify implements NotifyCallback {
             if (sector.compareTo(sectors[i]) >= 0 && sector.compareTo(sectors[i + 1]) < 0) {
                 if (chordClient.ships[i]) {
                     ship++;
-                    System.out.println("Ship " + ship + " destroyed in sector " + i);
+					System.out.println("Ship " + ship + " destroyed in sector " + (i + 1));
                     chordImpl.broadcast(target, Boolean.TRUE);
                 } else {
                     chordImpl.broadcast(target, Boolean.FALSE);

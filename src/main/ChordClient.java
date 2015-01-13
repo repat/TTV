@@ -21,7 +21,7 @@ public class ChordClient {
     private static final String IP = "localhost";
     private static final int S = 10;
     private static final int I = 100;
-    private boolean DEBUG = false;
+	private final boolean DEBUG = false;
 
     private static ChordImpl chordImpl;
     final BigInteger[] sectors = new BigInteger[I];
@@ -43,14 +43,14 @@ public class ChordClient {
             System.out.println("maxID :   " + BIGGESTID);
         }
         for (int i = 0; i < I; i++) {
-            shoot(getIdUnsigned(sectors[i].toByteArray()));
+			shoot(getIdUnsigned(sectors[i].toByteArray()));
         }
     }
 
     private static ID getIdUnsigned(byte[] id) {
-        ID result;
-        if (id[0] == 0) {
-            byte[] tmp = new byte[id.length - 1];
+		ID result;
+		if (id.length == 21 && id[0] == 0) {
+			byte[] tmp = new byte[id.length - 1];
             System.arraycopy(id, 1, tmp, 0, tmp.length);
             result = new ID(tmp);
         } else {
@@ -61,7 +61,7 @@ public class ChordClient {
 
     /**
      * joins the Chord Network
-     * 
+     *
      * @throws RuntimeException
      */
     private void joinChord() throws RuntimeException {
@@ -115,7 +115,7 @@ public class ChordClient {
         // System.out.println("myID:          " + myID);
         // System.out.println("predecessorID: " + predecessorID);
 
-        // predecessorID might be bigger than our ID, due to Chord circle
+		// predecessorID might be bigger than our ID, due to Chord circle1
         if (myID.compareTo(predecessorID) > 0) {
             distance = myID.subtract(predecessorID);
         } else {
@@ -159,7 +159,7 @@ public class ChordClient {
 
     /**
      * Laeuft
-     * 
+     *
      * @param sector
      */
     private void shoot(ID sector) {
