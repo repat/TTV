@@ -438,6 +438,8 @@ public final class NodeImpl extends Node {
 		if (this.logger.isEnabledFor(DEBUG)) {
 			this.logger.debug(" Send broadcast message");
 		}
+		
+		int transactionID = info.getTransaction();
 
 		List<Node> fingerTable = impl.getFingerTable();
 		Collections.sort(fingerTable);
