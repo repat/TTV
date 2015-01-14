@@ -10,44 +10,87 @@ import java.net.Inet4Address;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ChordClient {
+public class ChordClient implements Runnable {
     // constants
     private static final String PROTOCOL = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
     private static final String PORT = "8080";
-    public static final BigInteger BIGGESTID = BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE);
-    private static final String IP = "localhost";
-    private static final int S = 10;
-    private static final int I = 100;
-	private final boolean DEBUG = false;
+	private static final BigInteger BIGGESTID = BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE);
+	private static final String IP = "localhost";
+	private static final int S = 10; // number of ships
+	private static final int I = 100; // number of mySectors
+	private static final boolean DEBUG = false;
+	private static final boolean TESTING_MODE = true;
 
-    private static ChordImpl chordImpl;
-    final BigInteger[] sectors = new BigInteger[I];
-    final boolean[] ships = new boolean[I];
-    private static BigInteger myID;
-    private static BigInteger predecessorID;
+	private final String PORT_LOCAL;
+	private ChordImpl chordImpl;
+	BigInteger[] mySectors = new BigInteger[I];
+	final boolean[] ships = new boolean[I];
+	private BigInteger myID;
+	private BigInteger distance;
+	private final String PLAYER_NAME; // just for local testing purposos
+	private final Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) {
-        ChordClient cc = new ChordClient();
-        cc.startGame();
-    }
+	public ChordClient(String PORT_LOCAL, String playerName) {
+		this.PORT_LOCAL = PORT_LOCAL;
+		this.PLAYER_NAME = playerName;
+	}
 
-    public void startGame() {
+	public static void main(String[] args) throws InterruptedException {
+
+		// spawns x numbers of clients
+		for (int i = 0; i < 5; i++) {
+			String port = String.valueOf(8181 + i);
+			new Thread(new ChordClient(port, "Player " + (i + 1))).start();
+			// sleep prevents calling "loadPropertyFile()" at the same time.
+			Thread.sleep(100);
+		}
+	}
+
+	@Override
+	public void run() {
         joinChord();
-        calculateSectors();
-        setShips();
 
-        if (DEBUG) {
-            System.out.println("maxID :   " + BIGGESTID);
-        }
-        for (int i = 0; i < I; i++) {
-			shoot(getIdUnsigned(sectors[i].toByteArray()));
-        }
-    }
+		if (!TESTING_MODE) {
+			// start the game after s was typed in
+			String input;
+			do {
+				System.out.print("type \"s\" to begin: ");
+				input = scanner.next();
+			} while (!input.equals("s"));
+		}
 
-    private static ID getIdUnsigned(byte[] id) {
+		// waits 10000 sec to make sure others have joined chord
+		try {
+			if (!TESTING_MODE) {
+				Thread.sleep(10000);
+			} else {
+				Thread.sleep(3000);
+			}
+		} catch (InterruptedException ex) {
+			Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, ex);
+		}
+
+		myID = chordImpl.getID().toBigInteger();
+		mySectors = calculateSectors(chordImpl.getPredecessorID().toBigInteger(), myID);
+		setShips();
+
+		// we start the game if we have the BIGGESTID
+		if (chordImpl.getPredecessorID().compareTo(chordImpl.getID()) > 0) {
+			System.out.println(PLAYER_NAME + ": I start!");
+
+			// If we start we shoot in front of us to find out our postPrecessors area.
+			// @Rene: ne bessere Idee?
+			shoot(distance
+				.add(myID.multiply(BigInteger.valueOf((long) 1.5)))
+				.mod(BIGGESTID));
+		}
+	}
+
+	ID getUnsignedId(byte[] id) {
 		ID result;
 		if (id.length == 21 && id[0] == 0) {
 			byte[] tmp = new byte[id.length - 1];
@@ -57,26 +100,41 @@ public class ChordClient {
             result = new ID(id);
         }
         return result;
-    }
+	}
+
+	boolean isMyID(BigInteger id) {
+		ID sectorID = getUnsignedId(id.toByteArray());
+		ID firstID = getUnsignedId(myID.toByteArray());
+		ID myLastID = getUnsignedId(mySectors[0].toByteArray());
+
+		boolean result = sectorID.isInInterval(firstID, myLastID);
+//		if (result) {
+//			System.out.println(PLAYER_NAME + ": " + id + " is my own ID");
+//		}
+
+		return result;
+	}
 
     /**
      * joins the Chord Network
      *
      * @throws RuntimeException
      */
-    private void joinChord() throws RuntimeException {
-        PropertiesLoader.loadPropertyFile();
+	private void joinChord() throws RuntimeException {
+		if (!PropertiesLoader.isLoaded()) {
+			PropertiesLoader.loadPropertyFile();
+		}
         URL localURL = null;
         try {
-            localURL = new URL(PROTOCOL + "://" + Inet4Address.getLocalHost().getHostAddress() + ":8181/");
+			localURL = new URL(PROTOCOL + "://" + Inet4Address.getLocalHost().getHostAddress() + ":" + PORT_LOCAL + "/");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         } catch (UnknownHostException e) {
-            Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, e);
+			Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, e);
         }
 
         chordImpl = new ChordImpl();
-        GameNotify myNotifyCallback = new GameNotify();
+		GameNotify myNotifyCallback = new GameNotify();
         myNotifyCallback.setChordClient(this, chordImpl);
         chordImpl.setCallback(myNotifyCallback);
 
@@ -93,7 +151,8 @@ public class ChordClient {
             throw new RuntimeException("Could not join DHT!", e);
         }
 
-        System.out.println("Chord joined: " + bootstrapURL + "\n");
+		System.out.println(PLAYER_NAME + ": Chord running on: " + localURL);
+//		System.out.println("Chord joined: " + bootstrapURL + "\n");
 
         if (DEBUG) {
             System.out.println("MaxID:         " + BIGGESTID);
@@ -102,41 +161,40 @@ public class ChordClient {
         }
     }
 
-    /**
-     * Calculates the sectores between the predecessor and our id and splits
-     * this into I Sectors. Also handles the case if the predecessor has a
-     * bigger id than we do.
-     */
-    private void calculateSectors() {
-        BigInteger distance;
-        myID = chordImpl.getID().toBigInteger();
-        predecessorID = chordImpl.getPredecessorID().toBigInteger();
+	/**
+	 * Calculates the mySectors between the predecessor and our id and splits this into I Sectors. Also handles the case if the predecessor has a bigger id than we do.
+	 *
+	 * @param from the first id, thinking circle clockwise
+	 * @param to the second id,
+	 * @return array of BigInteger
+	 */
+	private BigInteger[] calculateSectors(BigInteger from, BigInteger to) {
+		BigInteger[] result = new BigInteger[I];
 
-        // System.out.println("myID:          " + myID);
-        // System.out.println("predecessorID: " + predecessorID);
-
-		// predecessorID might be bigger than our ID, due to Chord circle1
-        if (myID.compareTo(predecessorID) > 0) {
-            distance = myID.subtract(predecessorID);
+		// predecessorID might be bigger than our ID, due to Chord circlel
+		if (from.compareTo(to) < 0) {
+			distance = to.subtract(from);
         } else {
-            distance = BIGGESTID.subtract(predecessorID).add(myID);
+			distance = BIGGESTID.subtract(from).add(to);
         }
-        // System.out.println("distance:      " + distance);
 
         BigInteger step = distance.divide(BigInteger.valueOf(I));
 
         for (int i = 0; i < I; i++) {
-            // (predecessorID + (i * step) + 1) % biggestID
-            sectors[i] = predecessorID.add(BigInteger.valueOf((long) i).multiply(step)).add(BigInteger.ONE)
-                    .mod(BIGGESTID);
+			// (from + 1 + (i * step)) % biggestID
+			result[i] = from
+				.add(BigInteger.ONE)
+				.add(BigInteger.valueOf((long) i).multiply(step))
+				.mod(BIGGESTID);
 
-            // System.out.println("sector " + (i + 1) + ": " + sectors[i]);
+//			System.out.println("sector " + (i + 1) + ": " + result[i]);
         }
-    }
+		return result;
+	}
 
     /**
-     * setzt zufällig S Schiffe auf einen der I Sektoren
-     */
+	 * Places S ships in I mySectors
+	 */
     private void setShips() {
 
         Random rnd = new Random();
@@ -158,16 +216,25 @@ public class ChordClient {
     }
 
     /**
-     * Laeuft
-     *
-     * @param sector
-     */
-    private void shoot(ID sector) {
-        chordImpl.retrieve(sector);
+     * shoots into a sector
+     * @param sector to shoot into
+	 */
+	void shoot(BigInteger sector) {
+		System.out.println(PLAYER_NAME + ": shooting at: " + sector);
+		chordImpl.retrieve(getUnsignedId(sector.toByteArray()));
     }
 
     public BigInteger getMyID() {
         return myID;
-    }
+	}
+
+	public String getPLAYER_NAME() {
+		return PLAYER_NAME;
+	}
+
+	public BigInteger getBIGGESTID() {
+		return BIGGESTID;
+	}
+
 
 }

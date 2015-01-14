@@ -37,19 +37,19 @@ import java.util.Properties;
  * {@link #STANDARD_PROPERTY_FILE} which must be located in the classpath. If
  * another file should be loaded, its file name has to be set as value for
  * property {@link #PROPERTY_WHERE_TO_FIND_PROPERTY_FILE}.
- * 
+ *
  * @author karsten
  * @version 1.0.5
  */
 public final class PropertiesLoader {
 
 	/**
-	 * Flag that indicates if the properties have been loaded. 
+	 * Flag that indicates if the properties have been loaded.
 	 */
-	private static boolean loaded = false; 
-	
+	private static boolean loaded = false;
+
 	/**
-	 * Prevent instantiation of this class by private constructor. 
+	 * Prevent instantiation of this class by private constructor.
 	 */
 	private PropertiesLoader() {
 		// not instantiable
@@ -73,12 +73,12 @@ public final class PropertiesLoader {
 	 * property file must be located in the classpath.
 	 */
 	public static void loadPropertyFile() {
-		
+
 		if (loaded) {
-			throw new IllegalStateException("Properties have already been loaded!"); 
+			throw new IllegalStateException("Properties have already been loaded!");
 		}
-		loaded = true; 
-		
+		loaded = true;
+
 		// if property file was specified, use it instead of standard property
 		// file
 
@@ -108,4 +108,9 @@ public final class PropertiesLoader {
 		}
 
 	}
+
+	public static boolean isLoaded() {
+		return loaded;
+	}
+
 }
