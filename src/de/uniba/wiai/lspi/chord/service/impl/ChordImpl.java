@@ -31,7 +31,6 @@ import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.DEBUG;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.INFO;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1016,36 +1015,21 @@ public final class ChordImpl implements Chord, Report, AsynChord {
     }
 
     // TODO: implement this function in TTVP
-    // send broadcast to all nodes in finger table
     @Override
     public void broadcast(ID target, Boolean hit) {
         this.logger.debug("App called broadcast");
 
-        // sort FingerTable
-        List<Node> fingerTable = this.getFingerTable();
-        // TODO: unique?
-        Collections.sort(fingerTable);
+        Broadcast broadcast = new Broadcast(this.getPredecessorID(), this.localNode.getNodeID(), target,
+                this.lastSeenTransactionID++, hit);
 
-        // FingerTable iterieren und Nachricht senden.
-        for (int i = 0; i < fingerTable.size(); i++) {
-            ID rangeHash;
-            if (i == fingerTable.size() - 1) {
-                // Letzter Eintrag im FingerTable.
-                rangeHash = this.getPredecessorID();
-            } else {
-                // Eintrag im FingerTable.
-                rangeHash = fingerTable.get(i + 1).getNodeID();
-            }
+        this.logger.debug("lastSeenTransactionID: " + this.lastSeenTransactionID);
+        System.out.println("lastSeenTransactionID: " + this.lastSeenTransactionID);
 
-            Broadcast broadcast = new Broadcast(rangeHash, getID(), target, lastSeenTransactionID++, hit);
-            this.logger.debug("lastSeenTransactionID: " + lastSeenTransactionID);
-            try {
-                fingerTable.get(i).broadcast(broadcast);
-            } catch (CommunicationException e) {
-                e.printStackTrace();
-            }
+        try {
+            this.localNode.broadcast(broadcast);
+        } catch (CommunicationException e) {
+            e.printStackTrace();
         }
-
     }
 
     public void setCallback(NotifyCallback callback) {
@@ -1071,6 +1055,14 @@ public final class ChordImpl implements Chord, Report, AsynChord {
         if (this.localNode != null) {
             this.localNode.clearCallback();
         }
+    }
+
+    public void setLastSeenTransactionID(int lastSeenTransactionID) {
+        this.lastSeenTransactionID = lastSeenTransactionID;
+    }
+
+    public int getLastSeenTransactionID() {
+        return this.lastSeenTransactionID;
     }
 
 }

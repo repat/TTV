@@ -34,45 +34,45 @@ public class ChordClient implements Runnable {
 	private final String PLAYER_NAME; // just for local testing purposos
 	private final Scanner scanner = new Scanner(System.in);
 
-	public ChordClient(String PORT_LOCAL, String playerName) {
-		this.PORT_LOCAL = PORT_LOCAL;
-		this.PLAYER_NAME = playerName;
-	}
+    public ChordClient(String PORT_LOCAL, String playerName) {
+        this.PORT_LOCAL = PORT_LOCAL;
+        this.PLAYER_NAME = playerName;
+    }
 
-	public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
 
-		// spawns x numbers of clients
-		for (int i = 0; i < 5; i++) {
-			String port = String.valueOf(8181 + i);
-			new Thread(new ChordClient(port, "Player " + (i + 1))).start();
-			// sleep prevents calling "loadPropertyFile()" at the same time.
-			Thread.sleep(100);
-		}
-	}
+        // spawns x numbers of clients
+        for (int i = 0; i < 5; i++) {
+            String port = String.valueOf(8181 + i);
+            new Thread(new ChordClient(port, "Player " + (i + 1))).start();
+            // sleep prevents calling "loadPropertyFile()" at the same time.
+            Thread.sleep(100);
+        }
+    }
 
-	@Override
-	public void run() {
+    @Override
+    public void run() {
         joinChord();
 
-		if (!TESTING_MODE) {
-			// start the game after s was typed in
-			String input;
-			do {
-				System.out.print("type \"s\" to begin: ");
-				input = scanner.next();
-			} while (!input.equals("s"));
-		}
+        if (!TESTING_MODE) {
+            // start the game after s was typed in
+            String input;
+            do {
+                System.out.print("type \"s\" to begin: ");
+                input = scanner.next();
+            } while (!input.equals("s"));
+        }
 
-		// waits 10000 sec to make sure others have joined chord
-		try {
-			if (!TESTING_MODE) {
-				Thread.sleep(10000);
-			} else {
-				Thread.sleep(3000);
-			}
-		} catch (InterruptedException ex) {
-			Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, ex);
-		}
+        // waits 10000 sec to make sure others have joined chord
+        try {
+            if (!TESTING_MODE) {
+                Thread.sleep(10000);
+            } else {
+                Thread.sleep(3000);
+            }
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
 		myID = chordImpl.getID();
 		mySectors = calculateSectors(chordImpl.getPredecessorID(), myID);
@@ -110,29 +110,29 @@ public class ChordClient implements Runnable {
 //			System.out.println(PLAYER_NAME + ": " + id + " is my own ID");
 //		}
 
-		return result;
-	}
+        return result;
+    }
 
     /**
      * joins the Chord Network
-     *
+     * 
      * @throws RuntimeException
      */
-	private void joinChord() throws RuntimeException {
-		if (!PropertiesLoader.isLoaded()) {
-			PropertiesLoader.loadPropertyFile();
-		}
+    private void joinChord() throws RuntimeException {
+        if (!PropertiesLoader.isLoaded()) {
+            PropertiesLoader.loadPropertyFile();
+        }
         URL localURL = null;
         try {
-			localURL = new URL(PROTOCOL + "://" + Inet4Address.getLocalHost().getHostAddress() + ":" + PORT_LOCAL + "/");
+            localURL = new URL(PROTOCOL + "://" + Inet4Address.getLocalHost().getHostAddress() + ":" + PORT_LOCAL + "/");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         } catch (UnknownHostException e) {
-			Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, e);
+            Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, e);
         }
 
         chordImpl = new ChordImpl();
-		GameNotify myNotifyCallback = new GameNotify();
+        GameNotify myNotifyCallback = new GameNotify();
         myNotifyCallback.setChordClient(this, chordImpl);
         chordImpl.setCallback(myNotifyCallback);
 
@@ -149,8 +149,8 @@ public class ChordClient implements Runnable {
             throw new RuntimeException("Could not join DHT!", e);
         }
 
-		System.out.println(PLAYER_NAME + ": Chord running on: " + localURL);
-//		System.out.println("Chord joined: " + bootstrapURL + "\n");
+        System.out.println(PLAYER_NAME + ": Chord running on: " + localURL);
+        // System.out.println("Chord joined: " + bootstrapURL + "\n");
 
         if (DEBUG) {
             System.out.println("MaxID:         " + BIGGESTID);
@@ -169,11 +169,11 @@ public class ChordClient implements Runnable {
 	private ID[] calculateSectors(ID from, ID to) {
 		ID[] result = new ID[I];
 
-		// predecessorID might be bigger than our ID, due to Chord circlel
-		if (from.compareTo(to) < 0) {
-			distance = to.subtract(from);
+        // predecessorID might be bigger than our ID, due to Chord circlel
+        if (from.compareTo(to) < 0) {
+            distance = to.subtract(from);
         } else {
-			distance = BIGGESTID.subtract(from).add(to);
+            distance = BIGGESTID.subtract(from).add(to);
         }
 
 		ID step = distance.divide(I);
@@ -185,14 +185,14 @@ public class ChordClient implements Runnable {
 				.add(step.multiply(i))
 				.mod(BIGGESTID);
 
-//			System.out.println("sector " + (i + 1) + ": " + result[i]);
+            // System.out.println("sector " + (i + 1) + ": " + result[i]);
         }
-		return result;
-	}
+        return result;
+    }
 
     /**
-	 * Places S ships in I mySectors
-	 */
+     * Places S ships in I mySectors
+     */
     private void setShips() {
 
         Random rnd = new Random();
@@ -224,15 +224,14 @@ public class ChordClient implements Runnable {
 
 	public ID getMyID() {
         return myID;
-	}
+    }
 
-	public String getPLAYER_NAME() {
-		return PLAYER_NAME;
-	}
+    public String getPLAYER_NAME() {
+        return PLAYER_NAME;
+    }
 
 	public ID getBIGGESTID() {
 		return BIGGESTID;
 	}
-
 
 }

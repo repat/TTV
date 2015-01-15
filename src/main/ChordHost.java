@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class ChordHost {
 
     private static final String protocol = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
-    private static final String PORT = "8080";
+    private static final String PORT = "8080";   
 
     public static void main(String[] args) {
         PropertiesLoader.loadPropertyFile();
@@ -39,4 +39,10 @@ public class ChordHost {
 
         System.out.println("Chord listens on: " + localURL + "\n");
     }
+
+    public static String getPort() {
+        return PORT;
+    }
+    
+    
 }

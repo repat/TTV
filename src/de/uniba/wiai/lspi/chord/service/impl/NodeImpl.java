@@ -58,401 +58,397 @@ import de.uniba.wiai.lspi.util.logging.Logger;
  */
 public final class NodeImpl extends Node {
 
-	/**
-	 * Endpoint for incoming communication.
-	 */
-	private Endpoint myEndpoint = null;
+    /**
+     * Endpoint for incoming communication.
+     */
+    private Endpoint myEndpoint = null;
 
-	/**
-	 * Reference on local node.
-	 */
-	private ChordImpl impl;
+    /**
+     * Reference on local node.
+     */
+    private ChordImpl impl;
 
-	/**
-	 * Object logger. The name of the logger is the name of this class with the
-	 * nodeID appended. The length of the nodeID depends on the number of bytes
-	 * that are displayed when the ID is shown in Hex-Representation. See
-	 * documentation of {@link ID}. E.g.
-	 * de.uniba.wiai.lspi.chord.service.impl.NodeImpl.FF FF FF FF if the number
-	 * of displayed Bytes of an ID is 4.
-	 */
-	private Logger logger;
+    /**
+     * Object logger. The name of the logger is the name of this class with the
+     * nodeID appended. The length of the nodeID depends on the number of bytes
+     * that are displayed when the ID is shown in Hex-Representation. See
+     * documentation of {@link ID}. E.g.
+     * de.uniba.wiai.lspi.chord.service.impl.NodeImpl.FF FF FF FF if the number
+     * of displayed Bytes of an ID is 4.
+     */
+    private Logger logger;
 
-	/**
-	 * Routing table (including finger table, successor list, and predecessor
-	 * reference)
-	 */
-	private References references;
+    /**
+     * Routing table (including finger table, successor list, and predecessor
+     * reference)
+     */
+    private References references;
 
-	/**
-	 * Repository for locally stored entries.
-	 */
-	private Entries entries;
+    /**
+     * Repository for locally stored entries.
+     */
+    private Entries entries;
 
-	/**
-	 * Executor that executes insertion and removal of entries on successors of
-	 * this node.
-	 */
-	private Executor asyncExecutor;
+    /**
+     * Executor that executes insertion and removal of entries on successors of
+     * this node.
+     */
+    private Executor asyncExecutor;
 
-	private Lock notifyLock;
+    private Lock notifyLock;
 
-	/**
-	 * Creates that part of the local node which answers remote requests by
-	 * other nodes. Sole constructor, is invoked by ChordImpl only.
-	 * 
-	 * @param impl
-	 *            Reference on ChordImpl instance which created this object.
-	 * @param nodeID
-	 *            This node's Chord ID.
-	 * @param nodeURL
-	 *            URL, on which this node accepts connections.
-	 * @param references
-	 *            Routing table of this node.
-	 * @param entries
-	 *            Repository for entries of this node.
-	 * @throws IllegalArgumentException
-	 *             If any of the parameter has value <code>null</code>.
-	 */
-	NodeImpl(ChordImpl impl, ID nodeID, URL nodeURL,
-			NotifyCallback nodeCallback, References references, Entries entries) {
+    /**
+     * Creates that part of the local node which answers remote requests by
+     * other nodes. Sole constructor, is invoked by ChordImpl only.
+     * 
+     * @param impl
+     *            Reference on ChordImpl instance which created this object.
+     * @param nodeID
+     *            This node's Chord ID.
+     * @param nodeURL
+     *            URL, on which this node accepts connections.
+     * @param references
+     *            Routing table of this node.
+     * @param entries
+     *            Repository for entries of this node.
+     * @throws IllegalArgumentException
+     *             If any of the parameter has value <code>null</code>.
+     */
+    NodeImpl(ChordImpl impl, ID nodeID, URL nodeURL, NotifyCallback nodeCallback, References references, Entries entries) {
 
-		if (impl == null || nodeID == null || nodeURL == null
-				|| references == null || entries == null
-				|| nodeCallback == null) {
-			throw new IllegalArgumentException(
-					"Parameters of the constructor may not have a null value!");
-		}
+        if (impl == null || nodeID == null || nodeURL == null || references == null || entries == null
+                || nodeCallback == null) {
+            throw new IllegalArgumentException("Parameters of the constructor may not have a null value!");
+        }
 
-		this.logger = Logger.getLogger(NodeImpl.class.getName() + "."
-				+ nodeID.toString());
+        this.logger = Logger.getLogger(NodeImpl.class.getName() + "." + nodeID.toString());
 
-		this.impl = impl;
-		this.asyncExecutor = impl.getAsyncExecutor();
-		this.nodeID = nodeID;
-		this.nodeURL = nodeURL;
-		this.notifyCallback = nodeCallback;
-		this.references = references;
-		this.entries = entries;
-		this.notifyLock = new ReentrantLock(true);
+        this.impl = impl;
+        this.asyncExecutor = impl.getAsyncExecutor();
+        this.nodeID = nodeID;
+        this.nodeURL = nodeURL;
+        this.notifyCallback = nodeCallback;
+        this.references = references;
+        this.entries = entries;
+        this.notifyLock = new ReentrantLock(true);
 
-		// create endpoint for incoming connections
-		this.myEndpoint = Endpoint.createEndpoint(this, nodeURL);
-		this.myEndpoint.listen();
-	}
+        // create endpoint for incoming connections
+        this.myEndpoint = Endpoint.createEndpoint(this, nodeURL);
+        this.myEndpoint.listen();
+    }
 
-	/**
-	 * Makes this endpoint accept entries by other nodes. Is invoked by
-	 * ChordImpl only.
-	 */
-	final void acceptEntries() {
-		this.myEndpoint.acceptEntries();
-	}
+    /**
+     * Makes this endpoint accept entries by other nodes. Is invoked by
+     * ChordImpl only.
+     */
+    final void acceptEntries() {
+        this.myEndpoint.acceptEntries();
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final void disconnect() {
-		this.myEndpoint.disconnect();
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final void disconnect() {
+        this.myEndpoint.disconnect();
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final Node findSuccessor(ID key) {
-		return this.impl.findSuccessor(key);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final Node findSuccessor(ID key) {
+        return this.impl.findSuccessor(key);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final List<Node> notify(Node potentialPredecessor) {
-		/*
-		 * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008.
-		 * sven.
-		 */
-		this.notifyLock.lock();
-		try {
-			// the result will contain the list of successors as well as the
-			// predecessor of this node
-			List<Node> result = new LinkedList<Node>();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final List<Node> notify(Node potentialPredecessor) {
+        /*
+         * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008.
+         * sven.
+         */
+        this.notifyLock.lock();
+        try {
+            // the result will contain the list of successors as well as the
+            // predecessor of this node
+            List<Node> result = new LinkedList<Node>();
 
-			// add reference on predecessor as well as on successors to result
-			if (this.references.getPredecessor() != null) {
-				result.add(this.references.getPredecessor());
-			} else {
-				result.add(potentialPredecessor);
-			}
-			result.addAll(this.references.getSuccessors());
+            // add reference on predecessor as well as on successors to result
+            if (this.references.getPredecessor() != null) {
+                result.add(this.references.getPredecessor());
+            } else {
+                result.add(potentialPredecessor);
+            }
+            result.addAll(this.references.getSuccessors());
 
-			// add potential predecessor to successor list and finger table and
-			// set
-			// it as predecessor if no better predecessor is available
-			this.references.addReferenceAsPredecessor(potentialPredecessor);
-			return result;
-		} finally {
-			this.notifyLock.unlock();
-		}
-	}
+            // add potential predecessor to successor list and finger table and
+            // set
+            // it as predecessor if no better predecessor is available
+            this.references.addReferenceAsPredecessor(potentialPredecessor);
+            return result;
+        } finally {
+            this.notifyLock.unlock();
+        }
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final RefsAndEntries notifyAndCopyEntries(Node potentialPredecessor)
-			throws CommunicationException {
-		/*
-		 * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008.
-		 * sven.
-		 */
-		this.notifyLock.lock();
-		try {
-			// copy all entries which lie between the local node ID and the ID
-			// of
-			// the potential predecessor, including those equal to potential
-			// predecessor
-			Set<Entry> copiedEntries = this.entries.getEntriesInInterval(
-					this.nodeID, potentialPredecessor.getNodeID());
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final RefsAndEntries notifyAndCopyEntries(Node potentialPredecessor) throws CommunicationException {
+        /*
+         * Mutual exclusion between notify and notifyAndCopyEntries. 17.03.2008.
+         * sven.
+         */
+        this.notifyLock.lock();
+        try {
+            // copy all entries which lie between the local node ID and the ID
+            // of
+            // the potential predecessor, including those equal to potential
+            // predecessor
+            Set<Entry> copiedEntries = this.entries.getEntriesInInterval(this.nodeID, potentialPredecessor.getNodeID());
 
-			return new RefsAndEntries(this.notify(potentialPredecessor),
-					copiedEntries);
-		} finally {
-			this.notifyLock.unlock();
-		}
-	}
+            return new RefsAndEntries(this.notify(potentialPredecessor), copiedEntries);
+        } finally {
+            this.notifyLock.unlock();
+        }
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final void ping() {
-		// do nothing---returning of method is proof of live
-		return;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final void ping() {
+        // do nothing---returning of method is proof of live
+        return;
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final void insertEntry(Entry toInsert) throws CommunicationException {
-		if (this.logger.isEnabledFor(DEBUG)) {
-			this.logger.debug("Inserting entry with id " + toInsert.getId()
-					+ " at node " + this.nodeID);
-		}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final void insertEntry(Entry toInsert) throws CommunicationException {
+        if (this.logger.isEnabledFor(DEBUG)) {
+            this.logger.debug("Inserting entry with id " + toInsert.getId() + " at node " + this.nodeID);
+        }
 
-		// Possible, but rare situation: a new node has joined which now is
-		// responsible for the id!
-		if ((this.references.getPredecessor() == null)
-				|| !toInsert.getId().isInInterval(
-						this.references.getPredecessor().getNodeID(),
-						this.nodeID)) {
-			this.references.getPredecessor().insertEntry(toInsert);
-			return;
-		}
+        // Possible, but rare situation: a new node has joined which now is
+        // responsible for the id!
+        if ((this.references.getPredecessor() == null)
+                || !toInsert.getId().isInInterval(this.references.getPredecessor().getNodeID(), this.nodeID)) {
+            this.references.getPredecessor().insertEntry(toInsert);
+            return;
+        }
 
-		// add entry to local repository
-		this.entries.add(toInsert);
+        // add entry to local repository
+        this.entries.add(toInsert);
 
-		// create set containing this entry for insertion of replicates at all
-		// nodes in successor list
-		Set<Entry> newEntries = new HashSet<Entry>();
-		newEntries.add(toInsert);
+        // create set containing this entry for insertion of replicates at all
+        // nodes in successor list
+        Set<Entry> newEntries = new HashSet<Entry>();
+        newEntries.add(toInsert);
 
-		// invoke insertReplicates method on all nodes in successor list
-		final Set<Entry> mustBeFinal = new HashSet<Entry>(newEntries);
-		for (final Node successor : this.references.getSuccessors()) {
-			this.asyncExecutor.execute(new Runnable() {
-				public void run() {
-					try {
-						successor.insertReplicas(mustBeFinal);
-					} catch (CommunicationException e) {
-						// do nothing
-					}
-				}
-			});
-		}
-	}
+        // invoke insertReplicates method on all nodes in successor list
+        final Set<Entry> mustBeFinal = new HashSet<Entry>(newEntries);
+        for (final Node successor : this.references.getSuccessors()) {
+            this.asyncExecutor.execute(new Runnable() {
+                public void run() {
+                    try {
+                        successor.insertReplicas(mustBeFinal);
+                    } catch (CommunicationException e) {
+                        // do nothing
+                    }
+                }
+            });
+        }
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final void insertReplicas(Set<Entry> replicatesToInsert) {
-		this.entries.addAll(replicatesToInsert);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final void insertReplicas(Set<Entry> replicatesToInsert) {
+        this.entries.addAll(replicatesToInsert);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final void removeEntry(Entry entryToRemove)
-			throws CommunicationException {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final void removeEntry(Entry entryToRemove) throws CommunicationException {
 
-		if (this.logger.isEnabledFor(DEBUG)) {
-			this.logger.debug("Removing entry with id " + entryToRemove.getId()
-					+ " at node " + this.nodeID);
-		}
+        if (this.logger.isEnabledFor(DEBUG)) {
+            this.logger.debug("Removing entry with id " + entryToRemove.getId() + " at node " + this.nodeID);
+        }
 
-		// Possible, but rare situation: a new node has joined which now is
-		// responsible for the id!
-		if (this.references.getPredecessor() != null
-				&& !entryToRemove.getId().isInInterval(
-						this.references.getPredecessor().getNodeID(),
-						this.nodeID)) {
-			this.references.getPredecessor().removeEntry(entryToRemove);
-			return;
-		}
+        // Possible, but rare situation: a new node has joined which now is
+        // responsible for the id!
+        if (this.references.getPredecessor() != null
+                && !entryToRemove.getId().isInInterval(this.references.getPredecessor().getNodeID(), this.nodeID)) {
+            this.references.getPredecessor().removeEntry(entryToRemove);
+            return;
+        }
 
-		// remove entry from repository
-		this.entries.remove(entryToRemove);
+        // remove entry from repository
+        this.entries.remove(entryToRemove);
 
-		// create set containing this entry for removal of replicates at all
-		// nodes in successor list
-		final Set<Entry> entriesToRemove = new HashSet<Entry>();
-		entriesToRemove.add(entryToRemove);
+        // create set containing this entry for removal of replicates at all
+        // nodes in successor list
+        final Set<Entry> entriesToRemove = new HashSet<Entry>();
+        entriesToRemove.add(entryToRemove);
 
-		// invoke removeReplicates method on all nodes in successor list
-		List<Node> successors = this.references.getSuccessors();
-		final ID id = this.nodeID;
-		for (final Node successor : successors) {
-			this.asyncExecutor.execute(new Runnable() {
-				public void run() {
-					try {
-						// remove only replica of removed entry
-						successor.removeReplicas(id, entriesToRemove);
-					} catch (CommunicationException e) {
-						// do nothing for the moment
-					}
-				}
-			});
-		}
-	}
+        // invoke removeReplicates method on all nodes in successor list
+        List<Node> successors = this.references.getSuccessors();
+        final ID id = this.nodeID;
+        for (final Node successor : successors) {
+            this.asyncExecutor.execute(new Runnable() {
+                public void run() {
+                    try {
+                        // remove only replica of removed entry
+                        successor.removeReplicas(id, entriesToRemove);
+                    } catch (CommunicationException e) {
+                        // do nothing for the moment
+                    }
+                }
+            });
+        }
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final void removeReplicas(ID sendingNodeID,
-			Set<Entry> replicasToRemove) {
-		if (replicasToRemove.size() == 0) {
-			// remove all replicas in interval
-			boolean debug = this.logger.isEnabledFor(DEBUG);
-			if (debug) {
-				this.logger.debug("Removing replicas. Current no. of entries: "
-						+ this.entries.getNumberOfStoredEntries());
-			}
-			/*
-			 * Determine entries to remove. These entries are located between
-			 * the id of the local peer and the argument sendingNodeID
-			 */
-			Set<Entry> allReplicasToRemove = this.entries.getEntriesInInterval(
-					this.nodeID, sendingNodeID);
-			if (debug) {
-				this.logger.debug("Replicas to remove " + allReplicasToRemove);
-				this.logger.debug("Size of replicas to remove "
-						+ allReplicasToRemove.size());
-			}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final void removeReplicas(ID sendingNodeID, Set<Entry> replicasToRemove) {
+        if (replicasToRemove.size() == 0) {
+            // remove all replicas in interval
+            boolean debug = this.logger.isEnabledFor(DEBUG);
+            if (debug) {
+                this.logger.debug("Removing replicas. Current no. of entries: "
+                        + this.entries.getNumberOfStoredEntries());
+            }
+            /*
+             * Determine entries to remove. These entries are located between
+             * the id of the local peer and the argument sendingNodeID
+             */
+            Set<Entry> allReplicasToRemove = this.entries.getEntriesInInterval(this.nodeID, sendingNodeID);
+            if (debug) {
+                this.logger.debug("Replicas to remove " + allReplicasToRemove);
+                this.logger.debug("Size of replicas to remove " + allReplicasToRemove.size());
+            }
 
-			/*
-			 * Remove entries
-			 */
-			this.entries.removeAll(allReplicasToRemove);
+            /*
+             * Remove entries
+             */
+            this.entries.removeAll(allReplicasToRemove);
 
-			if (debug) {
-				this.logger
-						.debug("Removed replicas??? Current no. of entries: "
-								+ this.entries.getNumberOfStoredEntries());
-			}
-		} else {
-			// remove only replicas of given entry
-			this.entries.removeAll(replicasToRemove);
-		}
-	}
+            if (debug) {
+                this.logger.debug("Removed replicas??? Current no. of entries: "
+                        + this.entries.getNumberOfStoredEntries());
+            }
+        } else {
+            // remove only replicas of given entry
+            this.entries.removeAll(replicasToRemove);
+        }
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public final Set<Entry> retrieveEntries(ID id)
-			throws CommunicationException {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final Set<Entry> retrieveEntries(ID id) throws CommunicationException {
 
-		// Possible, but rare situation: a new node has joined which now is
-		// responsible for the id!
-		if ((this.references.getPredecessor() != null)
-				&& (!id.isInInterval(this.references.getPredecessor()
-						.getNodeID(), this.nodeID))
-				&& (!this.nodeID.equals(id))) {
-			this.logger.fatal("The rare situation has occured at time "
-					+ System.currentTimeMillis() + ", id to look up=" + id
-					+ ", id of local node=" + this.nodeID
-					+ ", id of predecessor="
-					+ this.references.getPredecessor().getNodeID());
-			return this.references.getPredecessor().retrieveEntries(id);
-		}
-		// added by INET
-		if (this.notifyCallback != null) {
-			notifyCallback.retrieved(id);
-		}
-		// return entries from local repository
-		// for this purpose create a copy of the Set in order to allow the
-		// thread retrieving the entries to modify the Set without modifying the
-		// internal Set of entries. sven
-		return this.entries.getEntries(id);
-	}
+        // Possible, but rare situation: a new node has joined which now is
+        // responsible for the id!
+        if ((this.references.getPredecessor() != null)
+                && (!id.isInInterval(this.references.getPredecessor().getNodeID(), this.nodeID))
+                && (!this.nodeID.equals(id))) {
+            this.logger.fatal("The rare situation has occured at time " + System.currentTimeMillis()
+                    + ", id to look up=" + id + ", id of local node=" + this.nodeID + ", id of predecessor="
+                    + this.references.getPredecessor().getNodeID());
+            return this.references.getPredecessor().retrieveEntries(id);
+        }
+        // added by INET
+        if (this.notifyCallback != null) {
+            notifyCallback.retrieved(id);
+        }
+        // return entries from local repository
+        // for this purpose create a copy of the Set in order to allow the
+        // thread retrieving the entries to modify the Set without modifying the
+        // internal Set of entries. sven
+        return this.entries.getEntries(id);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	final public void leavesNetwork(Node predecessor) {
-		if (this.logger.isEnabledFor(INFO)) {
-			this.logger.info("Leaves network invoked; " + this.nodeID
-					+ ". Updating references.");
-			this.logger.info("New predecessor " + predecessor.getNodeID());
-		}
-		if (this.logger.isEnabledFor(DEBUG)) {
-			this.logger.debug("References before update: "
-					+ this.references.toString());
-		}
-		this.references.removeReference(this.references.getPredecessor());
-		if (this.logger.isEnabledFor(DEBUG)) {
-			this.logger.debug("References after update: "
-					+ this.references.toString());
-		}
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    final public void leavesNetwork(Node predecessor) {
+        if (this.logger.isEnabledFor(INFO)) {
+            this.logger.info("Leaves network invoked; " + this.nodeID + ". Updating references.");
+            this.logger.info("New predecessor " + predecessor.getNodeID());
+        }
+        if (this.logger.isEnabledFor(DEBUG)) {
+            this.logger.debug("References before update: " + this.references.toString());
+        }
+        this.references.removeReference(this.references.getPredecessor());
+        if (this.logger.isEnabledFor(DEBUG)) {
+            this.logger.debug("References after update: " + this.references.toString());
+        }
+    }
 
-	/**
-	 * 
-	 * @return
-	 */
-	final Executor getAsyncExecutor() {
-		return this.asyncExecutor;
-	}
+    /**
+     * 
+     * @return
+     */
+    final Executor getAsyncExecutor() {
+        return this.asyncExecutor;
+    }
 
-	// TODO: implement this function in TTVP
-	@Override
-	public final void broadcast(Broadcast info) throws CommunicationException {
-		if (this.logger.isEnabledFor(DEBUG)) {
-			this.logger.debug(" Send broadcast message");
-		}
-		
-		int transactionID = info.getTransaction();
+    // TODO: implement this function in TTVP
+    @Override
+    public final void broadcast(Broadcast info) throws CommunicationException {
+        if (this.logger.isEnabledFor(DEBUG)) {
+            this.logger.debug(" Send broadcast message");
+        }
 
-		List<Node> fingerTable = impl.getFingerTable();
-		Collections.sort(fingerTable);
+        // sort FingerTable
+        List<Node> fingerTable = this.references.getFingerTableEntries();
 
-		for (int i = 0; i <= fingerTable.size() - 1; i++) {
+        // TODO: unique?
+        Collections.sort(fingerTable);
 
-		}
+        for (int i = 0; i < fingerTable.size(); i++) {
+            System.out.println(fingerTable.get(i));
+        }
 
-		// finally inform application
-		if (this.notifyCallback != null) {
-			this.notifyCallback.broadcast(info.getSource(), info.getTarget(),
-					info.getHit());
-		}
-	}
+        // FingerTable iterieren und Nachricht senden.
+        for (int i = 0; i < fingerTable.size(); i++) {
+            ID rangeHash;
+            if (i == fingerTable.size() - 1) {
+                // Letzter Eintrag im FingerTable.
+                rangeHash = this.references.getPredecessor().getNodeID();
+            } else {
+                // Eintrag im FingerTable.
+                rangeHash = fingerTable.get(i + 1).getNodeID();
+            }
+
+            Broadcast broadcast = new Broadcast(rangeHash, info.getSource(), info.getTarget(), info.getTransaction(),
+                    info.getHit());
+
+            try {
+                this.broadcast(broadcast);
+            } catch (CommunicationException e) {
+                e.printStackTrace();
+            }
+        }
+        // finally inform application
+        if (this.notifyCallback != null) {
+            this.notifyCallback.broadcast(info.getSource(), info.getTarget(), info.getHit());
+        }
+
+    }
 
 }
