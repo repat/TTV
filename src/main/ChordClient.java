@@ -18,7 +18,7 @@ public class ChordClient implements Runnable {
     // constants
     private static final String PROTOCOL = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
     private static final String PORT = "8080";
-	private static final BigInteger BIGGESTID = BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE);
+	private static final ID BIGGESTID = new ID(BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE).toByteArray());
 	private static final String IP = "localhost";
 	private static final int S = 10; // number of ships
 	private static final int I = 100; // number of mySectors
@@ -27,10 +27,10 @@ public class ChordClient implements Runnable {
 
 	private final String PORT_LOCAL;
 	private ChordImpl chordImpl;
-	BigInteger[] mySectors = new BigInteger[I];
+	ID[] mySectors = new ID[I];
 	final boolean[] ships = new boolean[I];
-	private BigInteger myID;
-	private BigInteger distance;
+	private ID myID;
+	private ID distance;
 	private final String PLAYER_NAME; // just for local testing purposos
 	private final Scanner scanner = new Scanner(System.in);
 
@@ -74,40 +74,38 @@ public class ChordClient implements Runnable {
 			Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
-		myID = chordImpl.getID().toBigInteger();
-		mySectors = calculateSectors(chordImpl.getPredecessorID().toBigInteger(), myID);
+		myID = chordImpl.getID();
+		mySectors = calculateSectors(chordImpl.getPredecessorID(), myID);
 		setShips();
 
 		// we start the game if we have the BIGGESTID
 		if (chordImpl.getPredecessorID().compareTo(chordImpl.getID()) > 0) {
+//		if (getUnsignedId(BIGGESTID.toByteArray())
+//			.isInInterval(getUnsignedId(mySectors[0].toByteArray()), getUnsignedId(myID.toByteArray()))) {
 			System.out.println(PLAYER_NAME + ": I start!");
 
 			// If we start we shoot in front of us to find out our postPrecessors area.
 			// @Rene: ne bessere Idee?
 			shoot(distance
-				.add(myID.multiply(BigInteger.valueOf((long) 1.5)))
+				.add(myID.multiply((long) 1.5))
 				.mod(BIGGESTID));
 		}
 	}
 
-	ID getUnsignedId(byte[] id) {
-		ID result;
-		if (id.length == 21 && id[0] == 0) {
-			byte[] tmp = new byte[id.length - 1];
-            System.arraycopy(id, 1, tmp, 0, tmp.length);
-            result = new ID(tmp);
-        } else {
-            result = new ID(id);
-        }
-        return result;
-	}
+//	ID getUnsignedId(byte[] id) {
+//		ID result;
+//		if (id.length == 21 && id[0] == 0) {
+//			byte[] tmp = new byte[id.length - 1];
+//            System.arraycopy(id, 1, tmp, 0, tmp.length);
+//            result = new ID(tmp);
+//        } else {
+//            result = new ID(id);
+//        }
+//        return result;
+//	}
 
-	boolean isMyID(BigInteger id) {
-		ID sectorID = getUnsignedId(id.toByteArray());
-		ID firstID = getUnsignedId(myID.toByteArray());
-		ID myLastID = getUnsignedId(mySectors[0].toByteArray());
-
-		boolean result = sectorID.isInInterval(firstID, myLastID);
+	boolean isMyID(ID id) {
+		boolean result = id.isInInterval(myID, mySectors[0]);
 //		if (result) {
 //			System.out.println(PLAYER_NAME + ": " + id + " is my own ID");
 //		}
@@ -168,8 +166,8 @@ public class ChordClient implements Runnable {
 	 * @param to the second id,
 	 * @return array of BigInteger
 	 */
-	private BigInteger[] calculateSectors(BigInteger from, BigInteger to) {
-		BigInteger[] result = new BigInteger[I];
+	private ID[] calculateSectors(ID from, ID to) {
+		ID[] result = new ID[I];
 
 		// predecessorID might be bigger than our ID, due to Chord circlel
 		if (from.compareTo(to) < 0) {
@@ -178,13 +176,13 @@ public class ChordClient implements Runnable {
 			distance = BIGGESTID.subtract(from).add(to);
         }
 
-        BigInteger step = distance.divide(BigInteger.valueOf(I));
+		ID step = distance.divide(I);
 
         for (int i = 0; i < I; i++) {
 			// (from + 1 + (i * step)) % biggestID
 			result[i] = from
-				.add(BigInteger.ONE)
-				.add(BigInteger.valueOf((long) i).multiply(step))
+				.add(1)
+				.add(step.multiply(i))
 				.mod(BIGGESTID);
 
 //			System.out.println("sector " + (i + 1) + ": " + result[i]);
@@ -219,12 +217,12 @@ public class ChordClient implements Runnable {
      * shoots into a sector
      * @param sector to shoot into
 	 */
-	void shoot(BigInteger sector) {
+	void shoot(ID sector) {
 		System.out.println(PLAYER_NAME + ": shooting at: " + sector);
-		chordImpl.retrieve(getUnsignedId(sector.toByteArray()));
+		chordImpl.retrieve(sector);
     }
 
-    public BigInteger getMyID() {
+	public ID getMyID() {
         return myID;
 	}
 
@@ -232,7 +230,7 @@ public class ChordClient implements Runnable {
 		return PLAYER_NAME;
 	}
 
-	public BigInteger getBIGGESTID() {
+	public ID getBIGGESTID() {
 		return BIGGESTID;
 	}
 

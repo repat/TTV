@@ -1,6 +1,5 @@
 package main;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,10 +33,9 @@ public class GameNotify implements NotifyCallback {
 	}
 
 	private void handleHit(ID target) {
-		BigInteger sector = target.toBigInteger();
-		BigInteger[] sectors = chordClient.mySectors;
+		ID[] sectors = chordClient.mySectors;
 		for (int i = 0; i < sectors.length - 1; i++) {
-			if (sector.compareTo(sectors[i]) >= 0 && sector.compareTo(sectors[i + 1]) < 0) {
+			if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
 				if (chordClient.ships[i]) {
 					System.out.println(chordClient.getPLAYER_NAME() + ": Ship " + ship + " destroyed in sector " + (i + 1));
 					ship--;
@@ -51,7 +49,7 @@ public class GameNotify implements NotifyCallback {
 			}
 		}
 
-		if (sector.compareTo(sectors[sectors.length - 1]) >= 0 && sector.compareTo(chordClient.getMyID()) <= 0) {
+		if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(chordClient.getMyID()) <= 0) {
 			if (chordClient.ships[sectors.length - 1]) {
 				System.out.println(chordClient.getPLAYER_NAME() + ": Ship " + ship + " destroyed in sector 100");
 				ship--;
@@ -80,21 +78,24 @@ public class GameNotify implements NotifyCallback {
 		System.out.println();
 		Random rnd = new Random();
 		long sectorNumber;
-		BigInteger sectorSize = chordClient.getBIGGESTID().divide(BigInteger.valueOf(3 * 100));
-		BigInteger targetSector;
+		ID sectorSize = chordClient.getBIGGESTID().divide(3 * 100);
+		ID targetSector;
 
 		do {
-			sectorNumber = rnd.nextInt(100 * 3); // number of sectors * players
-			targetSector = BigInteger.valueOf(sectorNumber).multiply(sectorSize).mod(chordClient.getBIGGESTID());
+			sectorNumber = rnd.nextInt(100 * 5); // number of sectors * players
+			targetSector = sectorSize
+				.multiply(sectorNumber)
+				.add((sectorSize.divide(2)))
+				.mod(chordClient.getBIGGESTID());
 		} while (chordClient.isMyID(targetSector) || !allreadyHit(targetSector));
 
 		chordClient.shoot(targetSector);
 	}
 
-	private boolean allreadyHit(BigInteger sector) {
+	private boolean allreadyHit(ID sector) {
 
 		for (BroadcastLog b : bl) {
-			if (b.getTarget().equals(chordClient.getUnsignedId(sector.toByteArray()))) {
+			if (b.getTarget().equals(sector)) {
 				System.out.println(chordClient.getPLAYER_NAME() + ": allready hit this target!");
 				return true;
 			}
