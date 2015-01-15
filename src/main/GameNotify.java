@@ -15,7 +15,7 @@ public class GameNotify implements NotifyCallback {
 
     private ChordClient chordClient = null;
     private ChordImpl chordImpl = null;
-    private int ship = 0;
+	private int ship = 10;
 	private final List<BroadcastLog> bl = new ArrayList<>();
 	private final Map<ID, ID> uniquePlayers = new HashMap<>();
 	private final List<ID> dumbPlayers = new ArrayList<>();
