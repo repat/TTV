@@ -20,10 +20,10 @@ public class ChordClient implements Runnable {
     private static final String PORT = "8080";
 	private static final ID BIGGESTID = new ID(BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE).toByteArray());
 	private static final String IP = "localhost";
+	private static final int numberOfPlayers = 2;
 	private static final int S = 10; // number of ships
 	private static final int I = 100; // number of mySectors
-	private static final boolean DEBUG = false;
-	private static final boolean TESTING_MODE = true;
+	private static final boolean TESTING_MODE = false;
 
 	private final String PORT_LOCAL;
 	private ChordImpl chordImpl;
@@ -43,7 +43,7 @@ public class ChordClient implements Runnable {
     public static void main(String[] args) throws InterruptedException {
 
         // spawns x numbers of clients
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 1; i++) {
             String port = String.valueOf(8181 + i);
             new Thread(new ChordClient(port, "Player " + (i + 1))).start();
             // sleep prevents calling "loadPropertyFile()" at the same time.
@@ -125,12 +125,6 @@ public class ChordClient implements Runnable {
 
         System.out.println(PLAYER_NAME + ": Chord running on: " + localURL);
         // System.out.println("Chord joined: " + bootstrapURL + "\n");
-
-        if (DEBUG) {
-            System.out.println("MaxID:         " + BIGGESTID);
-            System.out.println("NodeId:        " + chordImpl.getID());
-            System.out.println("PredecessorID: " + chordImpl.getPredecessorID());
-        }
     }
 
 	/**
@@ -143,7 +137,7 @@ public class ChordClient implements Runnable {
 	private ID[] calculateSectors(ID from, ID to) {
 		ID[] result = new ID[I];
 
-        // predecessorID might be bigger than our ID, due to Chord circlel
+		// predecessorID might be bigger than our ID, due to Chord circle
         if (from.compareTo(to) < 0) {
             distance = to.subtract(from);
         } else {
@@ -179,12 +173,6 @@ public class ChordClient implements Runnable {
 
             ships[random] = true;
         }
-
-        if (DEBUG) {
-            for (int i = 0; i < I; i++) {
-                System.out.println("ship " + (i + 1) + ": " + ships[i]);
-            }
-        }
 	}
 
 	void shoot() {
@@ -196,7 +184,7 @@ public class ChordClient implements Runnable {
 		ID target;
 
 		do {
-			sectorNumber = rnd.nextInt(100 * 5); // number of sectors * players
+			sectorNumber = rnd.nextInt(100 * numberOfPlayers); // number of sectors * players
 			target = sectorSize
 				.multiply(sectorNumber)
 				.add((sectorSize.divide(2)))
@@ -212,15 +200,14 @@ public class ChordClient implements Runnable {
 //		if (result) {
 //			System.out.println(PLAYER_NAME + ": " + id + " is my own ID");
 //		}
-
 		return result;
 	}
 
 	private boolean alreadyHit(ID id) {
 
-		for (BroadcastLog b : myNotifyCallback.getBl()) {
+		for (BroadcastLog b : myNotifyCallback.getBroadcastLog()) {
 			if (b.getTarget().equals(id)) {
-				System.out.println(getPLAYER_NAME() + ": already hit this target!");
+//				System.out.println(getPLAYER_NAME() + ": already hit this target!");
 				return true;
 			}
 		}

@@ -102,7 +102,7 @@ public class GameNotify implements NotifyCallback {
 
 	}
 
-	public List<BroadcastLog> getBl() {
+	public List<BroadcastLog> getBroadcastLog() {
 		return broadcastLog;
 	}
 

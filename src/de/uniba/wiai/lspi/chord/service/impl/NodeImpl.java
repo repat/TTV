@@ -56,7 +56,7 @@ import de.uniba.wiai.lspi.util.logging.Logger;
 
 /**
  * Implements all operations which can be invoked remotely by other nodes.
- * 
+ *
  * @author Karsten Loesing
  * @version 1.0.5
  */
@@ -104,7 +104,7 @@ public final class NodeImpl extends Node {
     /**
      * Creates that part of the local node which answers remote requests by
      * other nodes. Sole constructor, is invoked by ChordImpl only.
-     * 
+     *
      * @param impl
      *            Reference on ChordImpl instance which created this object.
      * @param nodeID
@@ -404,7 +404,7 @@ public final class NodeImpl extends Node {
     }
 
     /**
-     * 
+     *
      * @return
      */
     final Executor getAsyncExecutor() {
@@ -452,11 +452,10 @@ public final class NodeImpl extends Node {
                 rangeHash = fingerTable.get(i + 1).getNodeID();
             }
 
-            Broadcast broadcast = new Broadcast(rangeHash, info.getSource(), info.getTarget(), info.getTransaction(),
-                    info.getHit());
+			Broadcast b = new Broadcast(rangeHash, info.getSource(), info.getTarget(), info.getTransaction(),                    info.getHit());
 
             try {
-                this.broadcast(broadcast);
+				fingerTable.get(i).broadcast(b);
             } catch (CommunicationException e) {
                 e.printStackTrace();
             }
