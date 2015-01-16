@@ -30,10 +30,7 @@ package de.uniba.wiai.lspi.chord.service.impl;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.DEBUG;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.INFO;
 
-import java.math.BigInteger;
-import java.security.acl.LastOwnerException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -56,7 +53,7 @@ import de.uniba.wiai.lspi.util.logging.Logger;
 
 /**
  * Implements all operations which can be invoked remotely by other nodes.
- * 
+ *
  * @author Karsten Loesing
  * @version 1.0.5
  */
@@ -104,7 +101,7 @@ public final class NodeImpl extends Node {
     /**
      * Creates that part of the local node which answers remote requests by
      * other nodes. Sole constructor, is invoked by ChordImpl only.
-     * 
+     *
      * @param impl
      *            Reference on ChordImpl instance which created this object.
      * @param nodeID
@@ -404,7 +401,7 @@ public final class NodeImpl extends Node {
     }
 
     /**
-     * 
+     *
      * @return
      */
     final Executor getAsyncExecutor() {
@@ -417,7 +414,7 @@ public final class NodeImpl extends Node {
         if (this.logger.isEnabledFor(DEBUG)) {
             this.logger.debug(" Send broadcast message");
         }
-        
+
         // lastSeenTransactionID updaten
         if (impl.getLastSeenTransactionID() < info.getTransaction()) {
             System.out.println("info.getTransaction(): " + info.getTransaction());
@@ -430,7 +427,7 @@ public final class NodeImpl extends Node {
         if (this.notifyCallback != null) {
             this.notifyCallback.broadcast(info.getSource(), info.getTarget(), info.getHit());
         }
-        
+
         // sort unique FingerTable
         List<Node> fingerTable = new ArrayList<Node>();
         Set<Node> fingerSet = new HashSet<Node>(this.references.getFingerTableEntries());
@@ -447,10 +444,10 @@ public final class NodeImpl extends Node {
             // abbruchkriterium
             // if (fingerTable.get(i) > info.getRange()) {
             if (fingerTable.get(i).getNodeID().subtract(this.nodeID).compareTo(info.getRange().subtract(this.nodeID)) > 0) {
-                System.out.println("fingerTable.get(i) > info.getRange()");
+//                System.out.println("fingerTable.get(i) > info.getRange()");
                 return;
             }
-            
+
             ID rangeHash;
             if (i == fingerTable.size() - 1) {
                 // Letzter Eintrag im FingerTable.
@@ -463,9 +460,6 @@ public final class NodeImpl extends Node {
                     info.getHit());
 
             try {
-                System.out.println("hier stoppt er");
-                System.out.println(fingerTable.get(i));
-                System.out.println(b);
                 fingerTable.get(i).broadcast(b);
                 System.out.println("Broadcast sent with transaction ID: " + info.getTransaction());
             } catch (CommunicationException e) {

@@ -6,59 +6,33 @@ import de.uniba.wiai.lspi.chord.service.ServiceException;
 import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
 import java.net.MalformedURLException;
 
-public class Chord implements Runnable {
+public class Chord {
 
-    private String joinOrCreate = "join";
+    // constants for config
+    private static final String PROTOCOL = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
+    private static final String SERVER_IP = "192.168.1.1";
+    private static final String SERVER_PORT = "8080";
+    private static final String CLIENT_IP = "192.168.1.2";
+    private static final String CLIENT_PORT = "8181";
 
+    // instances of things
     private ChordImpl chordImpl;
-    public ChordImpl getChordImpl() {
-        return chordImpl;
-    }
-
-    public void setChordImpl(ChordImpl chordImpl) {
-        this.chordImpl = chordImpl;
-    }
-
-    private GameNotify myNotifyCallback;
-    
-    public GameNotify getMyNotifyCallback() {
-        return myNotifyCallback;
-    }
-
-    public void setMyNotifyCallback(GameNotify myNotifyCallback) {
-        this.myNotifyCallback = myNotifyCallback;
-    }
-
-    public GameLogic getChordClient() {
-        return gameLogic;
-    }
-
-    public void setChordClient(GameLogic chordClient) {
-        this.gameLogic = chordClient;
-    }
-
-    final static String PLAYER_NAME = "Rene";
-    static final String PROTOCOL = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
-    static final String HOST_PORT = "8080";
-    static final String HOST_IP = "192.168.1.1";
-    static final String LOCAL_IP = "192.168.1.2";
-    private final String LOCAL_PORT = "8181";
-    private GameLogic gameLogic = null;
-    
+    private final String joinOrCreate;
+    private GameLogic gameLogic;
 
     public Chord(String joinOrCreate,GameLogic gameLogic) {
         this.joinOrCreate = joinOrCreate;
         this.gameLogic = gameLogic;
     }
 
-    @Override
-    public void run() {
+    public void init() {
         if (joinOrCreate.equals("join")) {
             joinChord();
         } else if (joinOrCreate.equals("create")) {
             createChord();
+        } else {
+            System.out.println("ERROR: choose if you want to be server of client!");
         }
-
     }
 
     private void createChord() {
@@ -68,7 +42,7 @@ public class Chord implements Runnable {
 
         URL localURL = null;
         try {
-            localURL = new URL(PROTOCOL + "://" + HOST_IP + ":" + HOST_PORT + "/");
+            localURL = new URL(PROTOCOL + "://" + SERVER_IP + ":" + SERVER_PORT + "/");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -84,12 +58,12 @@ public class Chord implements Runnable {
             throw new RuntimeException("Could not create DHT!", e);
         }
 
-        System.out.println(PLAYER_NAME + ": Chord listens on: " + localURL);
+        System.out.println("Chord listens on: " + localURL);
     }
 
     /**
      * joins the Chord Network
-     * 
+     *
      * @throws RuntimeException
      */
     private void joinChord() throws RuntimeException {
@@ -98,17 +72,10 @@ public class Chord implements Runnable {
         }
         URL localURL = null;
         try {
-            // localURL = new URL(PROTOCOL + "://" +
-            // Inet4Address.getLocalHost().getHostAddress() + ":" + localPort +
-            // "/");
-            localURL = new URL(PROTOCOL + "://" + LOCAL_IP + ":" + LOCAL_PORT + "/");
+            localURL = new URL(PROTOCOL + "://" + CLIENT_IP + ":" + CLIENT_PORT + "/");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
-        // } catch (UnknownHostException e) {
-        // Logger.getLogger(ChordClient.class.getName()).log(Level.SEVERE, null,
-        // e);
-        // }
 
         chordImpl = new ChordImpl();
         myNotifyCallback = new GameNotify();
@@ -117,7 +84,7 @@ public class Chord implements Runnable {
 
         URL bootstrapURL = null;
         try {
-            bootstrapURL = new URL(PROTOCOL + "://" + HOST_IP + ":" + HOST_PORT + "/");
+            bootstrapURL = new URL(PROTOCOL + "://" + SERVER_IP + ":" + SERVER_PORT + "/");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -128,8 +95,33 @@ public class Chord implements Runnable {
             throw new RuntimeException("Could not join DHT!", e);
         }
 
-        System.out.println(PLAYER_NAME + ": Chord running on: " + localURL);
+        System.out.println("Chord running on: " + localURL);
         // System.out.println("Chord joined: " + bootstrapURL + "\n");
     }
 
+    public ChordImpl getChordImpl() {
+        return chordImpl;
+    }
+
+    public void setChordImpl(ChordImpl chordImpl) {
+        this.chordImpl = chordImpl;
+    }
+
+    private GameNotify myNotifyCallback;
+
+    public GameNotify getMyNotifyCallback() {
+        return myNotifyCallback;
+    }
+
+    public void setMyNotifyCallback(GameNotify myNotifyCallback) {
+        this.myNotifyCallback = myNotifyCallback;
+    }
+
+    public GameLogic getChordClient() {
+        return gameLogic;
+    }
+
+    public void setChordClient(GameLogic chordClient) {
+        this.gameLogic = chordClient;
+    }
 }

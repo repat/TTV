@@ -10,15 +10,13 @@ import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
 import java.util.Scanner;
 
 public class GameNotify implements NotifyCallback {
-
     private GameLogic gameLogic = null;
     private ChordImpl chordImpl = null;
     private int ship = 10;
     private final List<BroadcastLog> broadcastLog = new ArrayList<>();
     private final Map<ID, ID> uniquePlayers = new HashMap<>();
-    private final List<ID> dumbPlayers = new ArrayList<>();
+    private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
     private final Map<ID, Integer> hitForID = new HashMap<>();
-    private int staticcounter = 0;
 
     public void setChordClient(GameLogic chordClient, ChordImpl chordImpl) {
         this.gameLogic = chordClient;
@@ -27,24 +25,22 @@ public class GameNotify implements NotifyCallback {
 
     @Override
     public void retrieved(ID target) {
-        staticcounter++;
-        System.out.println("staticcounter: " + staticcounter);
         handleHit(target);
         gameLogic.shoot();
     }
 
     private void handleHit(ID target) {
         ID[] sectors = gameLogic.mySectors;
-        System.out.println("Ship: " + ship);
+        System.out.println("Ships left: " + ship);
         for (int i = 0; i < sectors.length - 1; i++) {
             if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
                 if (gameLogic.ships[i]) {
-                    System.out.println(Chord.PLAYER_NAME + ": Ship " + ship + " destroyed in sector " + (i + 1));
+                    System.out.println("Ship " + ship + " destroyed in sector " + (i + 1));
                     ship--;
                     chordImpl.broadcast(target, Boolean.TRUE);
                     break;
                 } else {
-                    System.out.println(Chord.PLAYER_NAME + ": no Ship" + " in sector " + (i + 1));
+                    System.out.println("no Ship" + " in sector " + (i + 1));
                     chordImpl.broadcast(target, Boolean.FALSE);
                     break;
                 }
@@ -53,28 +49,27 @@ public class GameNotify implements NotifyCallback {
 
         if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(gameLogic.myID) <= 0) {
             if (gameLogic.ships[sectors.length - 1]) {
-                System.out.println(Chord.PLAYER_NAME + ": Ship " + ship + " destroyed in sector 100");
+                System.out.println("Ship " + ship + " destroyed in sector 100");
                 ship--;
                 chordImpl.broadcast(target, Boolean.TRUE);
             } else {
-                System.out.println(Chord.PLAYER_NAME + ": no Ship" + " in sector 100");
+                System.out.println("no Ship" + " in sector 100");
                 chordImpl.broadcast(target, Boolean.FALSE);
             }
         }
 
         if (ship < 1) {
-            System.out.println(Chord.PLAYER_NAME + ": I LOST!");
+            System.out.println("I LOST!");
             Scanner scanner = new Scanner(System.in);
             scanner.next();
             scanner.close();
         }
-
     }
 
     @Override
     public void broadcast(ID source, ID target, Boolean hit) {
-        System.out.println("Broadcast empfangen: src:" + source.toHexString() + ", target:" + target.toHexString()
-                + " hit:" + hit);
+//        System.out.println("Broadcast empfangen: src:" + source.toHexString() + ", target:" + target.toHexString()
+//                + " hit:" + hit);
         int transactionID = chordImpl.getLastSeenTransactionID();
 
         // chordImpl.setLastSeenTransactionID(transactionID);

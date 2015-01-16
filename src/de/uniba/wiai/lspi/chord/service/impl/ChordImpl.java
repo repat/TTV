@@ -62,7 +62,7 @@ import de.uniba.wiai.lspi.util.logging.Logger;
 
 /**
  * Implements all operations which can be invoked on the local node.
- * 
+ *
  * @author Karsten Loesing
  * @version 1.0.5
  */
@@ -149,9 +149,9 @@ public final class ChordImpl implements Chord, Report, AsynChord {
 
     /**
      * ThreadFactory used with Executor services.
-     * 
+     *
      * @author sven
-     * 
+     *
      */
     private static class ChordThreadFactory implements java.util.concurrent.ThreadFactory {
 
@@ -352,7 +352,7 @@ public final class ChordImpl implements Chord, Report, AsynChord {
      * localID and localURL are correctly set. Is invoked by the methods
      * {@link #create()}, {@link #create(URL)}, and {@link #create(URL, ID)}
      * only.
-     * 
+     *
      * @throws RuntimeException
      */
     private final void createHelp() {
@@ -484,7 +484,7 @@ public final class ChordImpl implements Chord, Report, AsynChord {
      * that localID and localURL are correctly set. Is invoked by the methods
      * {@link #join(URL)}, {@link #join(URL, URL)}, and
      * {@link #join(URL, ID, URL)} only.
-     * 
+     *
      * @param bootstrapURL
      *            URL of bootstrap node. Must not be null!.
      * @throws ServiceException
@@ -835,7 +835,7 @@ public final class ChordImpl implements Chord, Report, AsynChord {
     /**
      * Returns a human-readable string representation containing this node's
      * node ID and URL.
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override
@@ -846,7 +846,7 @@ public final class ChordImpl implements Chord, Report, AsynChord {
 
     /**
      * Returns the Chord node which is responsible for the given key.
-     * 
+     *
      * @param key
      *            Key for which the successor is searched for.
      * @throws NullPointerException
@@ -1018,7 +1018,6 @@ public final class ChordImpl implements Chord, Report, AsynChord {
     @Override
     public void broadcast(ID target, Boolean hit) {
         this.logger.debug("App called broadcast");
-        System.out.println("App called broadcast");
 
         Broadcast broadcast = new Broadcast(this.getPredecessorID(), this.localNode.getNodeID(), target,
                 this.lastSeenTransactionID++, hit);
