@@ -10,18 +10,17 @@ public class Chord {
 
     // constants for config
     private static final String PROTOCOL = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
-    private static final String SERVER_IP = "192.168.1.1";
+    private static final String SERVER_IP = "192.168.0.14";
     private static final String SERVER_PORT = "8080";
-    private static final String CLIENT_IP = "192.168.1.2";
+    private static final String CLIENT_IP = "192.168.0.5";
     private static final String CLIENT_PORT = "8181";
+    private static final String joinOrCreate = "join";
 
     // instances of things
     private ChordImpl chordImpl;
-    private final String joinOrCreate;
     private GameLogic gameLogic;
 
-    public Chord(String joinOrCreate,GameLogic gameLogic) {
-        this.joinOrCreate = joinOrCreate;
+    public Chord(GameLogic gameLogic) {
         this.gameLogic = gameLogic;
     }
 

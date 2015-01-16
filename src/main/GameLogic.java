@@ -14,7 +14,6 @@ public class GameLogic {
     private static final int I = 100; // number of mySectors
     private static final int WAITING_TIME_CHORD_JOIN = 5000;
     private static final int MIDDLE = 2;
-    private static final String JOIN_OR_CREATE_FOR_THIS_CLIENT = "join";
     private static final ID BIGGEST_ID = new ID(BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE).toByteArray());
 
     // package private
@@ -29,7 +28,7 @@ public class GameLogic {
 
     public static void main(String[] args) throws InterruptedException {
         GameLogic cc = new GameLogic();
-        chord = new Chord(JOIN_OR_CREATE_FOR_THIS_CLIENT, cc);
+        chord = new Chord(cc);
         chord.init();
         // sleep prevents calling "loadPropertyFile()" at the same time.
         Thread.sleep(100);
