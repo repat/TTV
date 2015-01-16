@@ -30,11 +30,11 @@ public class Chord implements Runnable {
     }
 
     public GameLogic getChordClient() {
-        return chordClient;
+        return gameLogic;
     }
 
     public void setChordClient(GameLogic chordClient) {
-        this.chordClient = chordClient;
+        this.gameLogic = chordClient;
     }
 
     final static String PLAYER_NAME = "Rene";
@@ -42,11 +42,13 @@ public class Chord implements Runnable {
     static final String HOST_PORT = "8080";
     static final String HOST_IP = "192.168.1.1";
     static final String LOCAL_IP = "192.168.1.2";
-    private GameLogic chordClient = null;
     private final String LOCAL_PORT = "8181";
+    private GameLogic gameLogic = null;
+    
 
-    public Chord(String joinOrCreate) {
+    public Chord(String joinOrCreate,GameLogic gameLogic) {
         this.joinOrCreate = joinOrCreate;
+        this.gameLogic = gameLogic;
     }
 
     @Override
@@ -73,7 +75,7 @@ public class Chord implements Runnable {
 
         chordImpl = new ChordImpl();
         myNotifyCallback = new GameNotify();
-        myNotifyCallback.setChordClient(chordClient, chordImpl);
+        myNotifyCallback.setChordClient(gameLogic, chordImpl);
         chordImpl.setCallback(myNotifyCallback);
 
         try {
@@ -110,7 +112,7 @@ public class Chord implements Runnable {
 
         chordImpl = new ChordImpl();
         myNotifyCallback = new GameNotify();
-        myNotifyCallback.setChordClient(chordClient, chordImpl);
+        myNotifyCallback.setChordClient(gameLogic, chordImpl);
         chordImpl.setCallback(myNotifyCallback);
 
         URL bootstrapURL = null;

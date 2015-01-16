@@ -11,7 +11,7 @@ import java.util.Scanner;
 
 public class GameNotify implements NotifyCallback {
 
-    private GameLogic chordClient = null;
+    private GameLogic gameLogic = null;
     private ChordImpl chordImpl = null;
     private int ship = 10;
     private final List<BroadcastLog> broadcastLog = new ArrayList<>();
@@ -21,7 +21,7 @@ public class GameNotify implements NotifyCallback {
     private int staticcounter = 0;
 
     public void setChordClient(GameLogic chordClient, ChordImpl chordImpl) {
-        this.chordClient = chordClient;
+        this.gameLogic = chordClient;
         this.chordImpl = chordImpl;
     }
 
@@ -30,15 +30,15 @@ public class GameNotify implements NotifyCallback {
         staticcounter++;
         System.out.println("staticcounter: " + staticcounter);
         handleHit(target);
-        chordClient.shoot();
+        gameLogic.shoot();
     }
 
     private void handleHit(ID target) {
-        ID[] sectors = chordClient.mySectors;
+        ID[] sectors = gameLogic.mySectors;
         System.out.println("Ship: " + ship);
         for (int i = 0; i < sectors.length - 1; i++) {
             if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
-                if (chordClient.ships[i]) {
+                if (gameLogic.ships[i]) {
                     System.out.println(Chord.PLAYER_NAME + ": Ship " + ship + " destroyed in sector " + (i + 1));
                     ship--;
                     chordImpl.broadcast(target, Boolean.TRUE);
@@ -51,8 +51,8 @@ public class GameNotify implements NotifyCallback {
             }
         }
 
-        if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(chordClient.myID) <= 0) {
-            if (chordClient.ships[sectors.length - 1]) {
+        if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(gameLogic.myID) <= 0) {
+            if (gameLogic.ships[sectors.length - 1]) {
                 System.out.println(Chord.PLAYER_NAME + ": Ship " + ship + " destroyed in sector 100");
                 ship--;
                 chordImpl.broadcast(target, Boolean.TRUE);

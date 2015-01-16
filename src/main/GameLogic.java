@@ -39,7 +39,7 @@ public class GameLogic {
     public static void main(String[] args) throws InterruptedException {
         
         GameLogic cc = new GameLogic();
-        chord = new Chord(JOIN_OR_CREATE_FOR_THIS_CLIENT);
+        chord = new Chord(JOIN_OR_CREATE_FOR_THIS_CLIENT, cc);
         new Thread(chord).start();
         // sleep prevents calling "loadPropertyFile()" at the same time.
         Thread.sleep(100);
@@ -149,6 +149,7 @@ public class GameLogic {
 
         System.out.println("shooting at: " + target.toBigInteger());
         chord.getChordImpl().retrieve(target);
+        System.out.println("shooting done.");
     }
 
     boolean isInMyInterval(ID id) {
