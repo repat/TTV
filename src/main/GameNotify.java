@@ -35,34 +35,37 @@ public class GameNotify implements NotifyCallback {
         for (int i = 0; i < sectors.length - 1; i++) {
 			if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
                 if (chordClient.ships[i]) {
-					System.out.println(chordClient.getPLAYER_NAME() + ": Ship " + ship + " destroyed in sector " + (i + 1));
+					System.out.println(chordClient.PLAYER_NAME + ": Ship " + ship + " destroyed in sector " + (i + 1));
                     ship--;
                     chordImpl.broadcast(target, Boolean.TRUE);
                     break;
                 } else {
-                    System.out.println(chordClient.getPLAYER_NAME() + ": no Ship" + " in sector " + (i + 1));
+                    System.out.println(chordClient.PLAYER_NAME + ": no Ship" + " in sector " + (i + 1));
                     chordImpl.broadcast(target, Boolean.FALSE);
                     break;
                 }
             }
         }
 
-		if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(chordClient.getMyID()) <= 0) {
+		if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(chordClient.myID) <= 0) {
 			if (chordClient.ships[sectors.length - 1]) {
-				System.out.println(chordClient.getPLAYER_NAME() + ": Ship " + ship + " destroyed in sector 100");
+				System.out.println(chordClient.PLAYER_NAME + ": Ship " + ship + " destroyed in sector 100");
 				ship--;
 				chordImpl.broadcast(target, Boolean.TRUE);
 			} else {
-				System.out.println(chordClient.getPLAYER_NAME() + ": no Ship" + " in sector 100");
+				System.out.println(chordClient.PLAYER_NAME + ": no Ship" + " in sector 100");
 				chordImpl.broadcast(target, Boolean.FALSE);
 			}
 		}
-
+		
         if (ship < 1) {
-            System.out.println(chordClient.getPLAYER_NAME() + ": I LOST!");
+            System.out.println(chordClient.PLAYER_NAME + ": I LOST!");
             Scanner scanner = new Scanner(System.in);
             scanner.next();
+            scanner.close();
         }
+        
+        
     }
 
     @Override
