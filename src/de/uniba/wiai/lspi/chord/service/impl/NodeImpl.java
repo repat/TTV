@@ -420,10 +420,6 @@ public final class NodeImpl extends Node {
         // TODO: unique?
         Collections.sort(fingerTable);
 
-        for (int i = 0; i < fingerTable.size(); i++) {
-            System.out.println(fingerTable.get(i));
-        }
-
         // FingerTable iterieren und Nachricht senden.
         for (int i = 0; i < fingerTable.size(); i++) {
             ID rangeHash;

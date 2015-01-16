@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import de.uniba.wiai.lspi.chord.data.ID;
 import de.uniba.wiai.lspi.chord.service.NotifyCallback;
 import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
-import java.util.Random;
 import java.util.Scanner;
 
 public class GameNotify implements NotifyCallback {
@@ -16,7 +14,7 @@ public class GameNotify implements NotifyCallback {
     private ChordClient chordClient = null;
     private ChordImpl chordImpl = null;
 	private int ship = 10;
-	private final List<BroadcastLog> bl = new ArrayList<>();
+	private final List<BroadcastLog> broadcastLog = new ArrayList<>();
 	private final Map<ID, ID> uniquePlayers = new HashMap<>();
 	private final List<ID> dumbPlayers = new ArrayList<>();
 	private final Map<ID, Integer> hitForID = new HashMap<>();
@@ -29,8 +27,7 @@ public class GameNotify implements NotifyCallback {
     @Override
     public void retrieved(ID target) {
         handleHit(target);
-        calculateRanges();
-        shootEmUp();
+		chordClient.shoot();
     }
 
     private void handleHit(ID target) {
@@ -68,48 +65,12 @@ public class GameNotify implements NotifyCallback {
         }
     }
 
-    private void calculateRanges() {
-        // to be implemented
-    }
-
-	/**
-	 * shoots completely random right now
-	 */
-	private void shootEmUp() {
-		System.out.println();
-		Random rnd = new Random();
-		long sectorNumber;
-		ID sectorSize = chordClient.getBIGGESTID().divide(3 * 100);
-		ID targetSector;
-
-		do {
-			sectorNumber = rnd.nextInt(100 * 5); // number of sectors * players
-			targetSector = sectorSize
-				.multiply(sectorNumber)
-				.add((sectorSize.divide(2)))
-				.mod(chordClient.getBIGGESTID());
-		} while (chordClient.isMyID(targetSector) || !allreadyHit(targetSector));
-
-        chordClient.shoot(targetSector);
-    }
-
-	private boolean allreadyHit(ID sector) {
-
-		for (BroadcastLog b : bl) {
-			if (b.getTarget().equals(sector)) {
-				System.out.println(chordClient.getPLAYER_NAME() + ": allready hit this target!");
-				return true;
-			}
-		}
-		return true;
-	}
-
     @Override
     public void broadcast(ID source, ID target, Boolean hit) {
         int transactionID = chordImpl.getLastSeenTransactionID();
 
         chordImpl.setLastSeenTransactionID(transactionID);
-        bl.add(new BroadcastLog(source, target, hit, transactionID));
+		broadcastLog.add(new BroadcastLog(source, target, hit, transactionID));
 
         if (hit) {
             if (hitForID.containsKey(source)) {
@@ -139,5 +100,10 @@ public class GameNotify implements NotifyCallback {
             uniquePlayers.put(source, target);
         }
 
-    }
+	}
+
+	public List<BroadcastLog> getBl() {
+		return broadcastLog;
+	}
+
 }

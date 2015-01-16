@@ -33,6 +33,7 @@ public class ChordClient implements Runnable {
 	private ID distance;
 	private final String PLAYER_NAME; // just for local testing purposos
 	private final Scanner scanner = new Scanner(System.in);
+	private GameNotify myNotifyCallback;
 
     public ChordClient(String PORT_LOCAL, String playerName) {
         this.PORT_LOCAL = PORT_LOCAL;
@@ -80,42 +81,15 @@ public class ChordClient implements Runnable {
 
 		// we start the game if we have the BIGGESTID
 		if (chordImpl.getPredecessorID().compareTo(chordImpl.getID()) > 0) {
-//		if (getUnsignedId(BIGGESTID.toByteArray())
-//			.isInInterval(getUnsignedId(mySectors[0].toByteArray()), getUnsignedId(myID.toByteArray()))) {
 			System.out.println(PLAYER_NAME + ": I start!");
 
-			// If we start we shoot in front of us to find out our postPrecessors area.
-			// @Rene: ne bessere Idee?
-			shoot(distance
-				.add(myID.multiply((long) 1.5))
-				.mod(BIGGESTID));
+			shoot();
 		}
 	}
 
-//	ID getUnsignedId(byte[] id) {
-//		ID result;
-//		if (id.length == 21 && id[0] == 0) {
-//			byte[] tmp = new byte[id.length - 1];
-//            System.arraycopy(id, 1, tmp, 0, tmp.length);
-//            result = new ID(tmp);
-//        } else {
-//            result = new ID(id);
-//        }
-//        return result;
-//	}
-
-	boolean isMyID(ID id) {
-		boolean result = id.isInInterval(myID, mySectors[0]);
-//		if (result) {
-//			System.out.println(PLAYER_NAME + ": " + id + " is my own ID");
-//		}
-
-        return result;
-    }
-
     /**
      * joins the Chord Network
-     * 
+     *
      * @throws RuntimeException
      */
     private void joinChord() throws RuntimeException {
@@ -132,7 +106,7 @@ public class ChordClient implements Runnable {
         }
 
         chordImpl = new ChordImpl();
-        GameNotify myNotifyCallback = new GameNotify();
+        myNotifyCallback = new GameNotify();
         myNotifyCallback.setChordClient(this, chordImpl);
         chordImpl.setCallback(myNotifyCallback);
 
@@ -211,16 +185,47 @@ public class ChordClient implements Runnable {
                 System.out.println("ship " + (i + 1) + ": " + ships[i]);
             }
         }
-    }
+	}
 
-    /**
-     * shoots into a sector
-     * @param sector to shoot into
-	 */
-	void shoot(ID sector) {
-		System.out.println(PLAYER_NAME + ": shooting at: " + sector);
-		chordImpl.retrieve(sector);
-    }
+	void shoot() {
+
+		System.out.println();
+		Random rnd = new Random();
+		long sectorNumber;
+		ID sectorSize = getBIGGESTID().divide(3 * 100);
+		ID target;
+
+		do {
+			sectorNumber = rnd.nextInt(100 * 5); // number of sectors * players
+			target = sectorSize
+				.multiply(sectorNumber)
+				.add((sectorSize.divide(2)))
+				.mod(getBIGGESTID());
+		} while (isMyID(target) || alreadyHit(target));
+
+		System.out.println(PLAYER_NAME + ": shooting at: " + target.toBigInteger());
+		chordImpl.retrieve(target);
+	}
+
+	boolean isMyID(ID id) {
+		boolean result = id.isInInterval(mySectors[0], myID);
+//		if (result) {
+//			System.out.println(PLAYER_NAME + ": " + id + " is my own ID");
+//		}
+
+		return result;
+	}
+
+	private boolean alreadyHit(ID id) {
+
+		for (BroadcastLog b : myNotifyCallback.getBl()) {
+			if (b.getTarget().equals(id)) {
+				System.out.println(getPLAYER_NAME() + ": already hit this target!");
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public ID getMyID() {
         return myID;
