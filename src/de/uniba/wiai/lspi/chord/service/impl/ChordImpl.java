@@ -1018,15 +1018,15 @@ public final class ChordImpl implements Chord, Report, AsynChord {
     @Override
     public void broadcast(ID target, Boolean hit) {
         this.logger.debug("App called broadcast");
+        System.out.println("App called broadcast");
 
         Broadcast broadcast = new Broadcast(this.getPredecessorID(), this.localNode.getNodeID(), target,
                 this.lastSeenTransactionID++, hit);
 
-        this.logger.debug("lastSeenTransactionID: " + this.lastSeenTransactionID);
-        System.out.println("lastSeenTransactionID: " + this.lastSeenTransactionID);
-
         try {
             this.localNode.broadcast(broadcast);
+            this.logger.debug("lastSeenTransactionID: " + this.lastSeenTransactionID);
+            System.out.println("lastSeenTransactionID: " + this.lastSeenTransactionID);
         } catch (CommunicationException e) {
             e.printStackTrace();
         }

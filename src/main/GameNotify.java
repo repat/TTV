@@ -11,69 +11,74 @@ import java.util.Scanner;
 
 public class GameNotify implements NotifyCallback {
 
-    private ChordClient chordClient = null;
+    private GameLogic chordClient = null;
     private ChordImpl chordImpl = null;
-	private int ship = 10;
-	private final List<BroadcastLog> broadcastLog = new ArrayList<>();
-	private final Map<ID, ID> uniquePlayers = new HashMap<>();
-	private final List<ID> dumbPlayers = new ArrayList<>();
-	private final Map<ID, Integer> hitForID = new HashMap<>();
+    private int ship = 10;
+    private final List<BroadcastLog> broadcastLog = new ArrayList<>();
+    private final Map<ID, ID> uniquePlayers = new HashMap<>();
+    private final List<ID> dumbPlayers = new ArrayList<>();
+    private final Map<ID, Integer> hitForID = new HashMap<>();
+    private int staticcounter = 0;
 
-    public void setChordClient(ChordClient chordClient, ChordImpl chordImpl) {
+    public void setChordClient(GameLogic chordClient, ChordImpl chordImpl) {
         this.chordClient = chordClient;
         this.chordImpl = chordImpl;
     }
 
     @Override
     public void retrieved(ID target) {
+        staticcounter++;
+        System.out.println("staticcounter: " + staticcounter);
         handleHit(target);
-		chordClient.shoot();
+        chordClient.shoot();
     }
 
     private void handleHit(ID target) {
-		ID[] sectors = chordClient.mySectors;
+        ID[] sectors = chordClient.mySectors;
+        System.out.println("Ship: " + ship);
         for (int i = 0; i < sectors.length - 1; i++) {
-			if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
+            if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
                 if (chordClient.ships[i]) {
-					System.out.println(chordClient.PLAYER_NAME + ": Ship " + ship + " destroyed in sector " + (i + 1));
+                    System.out.println(Chord.PLAYER_NAME + ": Ship " + ship + " destroyed in sector " + (i + 1));
                     ship--;
                     chordImpl.broadcast(target, Boolean.TRUE);
                     break;
                 } else {
-                    System.out.println(chordClient.PLAYER_NAME + ": no Ship" + " in sector " + (i + 1));
+                    System.out.println(Chord.PLAYER_NAME + ": no Ship" + " in sector " + (i + 1));
                     chordImpl.broadcast(target, Boolean.FALSE);
                     break;
                 }
             }
         }
 
-		if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(chordClient.myID) <= 0) {
-			if (chordClient.ships[sectors.length - 1]) {
-				System.out.println(chordClient.PLAYER_NAME + ": Ship " + ship + " destroyed in sector 100");
-				ship--;
-				chordImpl.broadcast(target, Boolean.TRUE);
-			} else {
-				System.out.println(chordClient.PLAYER_NAME + ": no Ship" + " in sector 100");
-				chordImpl.broadcast(target, Boolean.FALSE);
-			}
-		}
-		
+        if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(chordClient.myID) <= 0) {
+            if (chordClient.ships[sectors.length - 1]) {
+                System.out.println(Chord.PLAYER_NAME + ": Ship " + ship + " destroyed in sector 100");
+                ship--;
+                chordImpl.broadcast(target, Boolean.TRUE);
+            } else {
+                System.out.println(Chord.PLAYER_NAME + ": no Ship" + " in sector 100");
+                chordImpl.broadcast(target, Boolean.FALSE);
+            }
+        }
+
         if (ship < 1) {
-            System.out.println(chordClient.PLAYER_NAME + ": I LOST!");
+            System.out.println(Chord.PLAYER_NAME + ": I LOST!");
             Scanner scanner = new Scanner(System.in);
             scanner.next();
             scanner.close();
         }
-        
-        
+
     }
 
     @Override
     public void broadcast(ID source, ID target, Boolean hit) {
+        System.out.println("Broadcast empfangen: src:" + source.toHexString() + ", target:" + target.toHexString()
+                + " hit:" + hit);
         int transactionID = chordImpl.getLastSeenTransactionID();
 
-        chordImpl.setLastSeenTransactionID(transactionID);
-		broadcastLog.add(new BroadcastLog(source, target, hit, transactionID));
+        // chordImpl.setLastSeenTransactionID(transactionID);
+        broadcastLog.add(new BroadcastLog(source, target, hit, transactionID));
 
         if (hit) {
             if (hitForID.containsKey(source)) {
@@ -103,10 +108,10 @@ public class GameNotify implements NotifyCallback {
             uniquePlayers.put(source, target);
         }
 
-	}
+    }
 
-	public List<BroadcastLog> getBroadcastLog() {
-		return broadcastLog;
-	}
+    public List<BroadcastLog> getBroadcastLog() {
+        return broadcastLog;
+    }
 
 }
