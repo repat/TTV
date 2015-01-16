@@ -30,6 +30,10 @@ package de.uniba.wiai.lspi.chord.service.impl;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.DEBUG;
 import static de.uniba.wiai.lspi.util.logging.Logger.LogLevel.INFO;
 
+import java.math.BigInteger;
+import java.security.acl.LastOwnerException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -52,7 +56,7 @@ import de.uniba.wiai.lspi.util.logging.Logger;
 
 /**
  * Implements all operations which can be invoked remotely by other nodes.
- *
+ * 
  * @author Karsten Loesing
  * @version 1.0.5
  */
@@ -100,7 +104,7 @@ public final class NodeImpl extends Node {
     /**
      * Creates that part of the local node which answers remote requests by
      * other nodes. Sole constructor, is invoked by ChordImpl only.
-     *
+     * 
      * @param impl
      *            Reference on ChordImpl instance which created this object.
      * @param nodeID
@@ -400,7 +404,7 @@ public final class NodeImpl extends Node {
     }
 
     /**
-     *
+     * 
      * @return
      */
     final Executor getAsyncExecutor() {
@@ -414,14 +418,31 @@ public final class NodeImpl extends Node {
             this.logger.debug(" Send broadcast message");
         }
 
-        // sort FingerTable
-        List<Node> fingerTable = this.references.getFingerTableEntries();
+        // lastSeenTransactionID updaten
+        if (impl.getLastSeenTransactionID() < info.getTransaction()) {
+            impl.setLastSeenTransactionID(info.getTransaction());
+            return;
+        }
 
-        // TODO: unique?
+        // sort unique FingerTable
+        List<Node> fingerTable = new ArrayList<Node>();
+        Set<Node> fingerSet = new HashSet<Node>(this.references.getFingerTableEntries());
+
+        for (Node n : fingerSet) {
+            fingerTable.add(n);
+        }
+
         Collections.sort(fingerTable);
 
         // FingerTable iterieren und Nachricht senden.
         for (int i = 0; i < fingerTable.size(); i++) {
+
+            // abbruchkriterium
+            // if (fingerTable.get(i) > info.getRange()) {
+            if (fingerTable.get(i).getNodeID().subtract(this.nodeID).compareTo(info.getRange().subtract(this.nodeID)) > 0) {
+                return;
+            }
+
             ID rangeHash;
             if (i == fingerTable.size() - 1) {
                 // Letzter Eintrag im FingerTable.
@@ -434,12 +455,13 @@ public final class NodeImpl extends Node {
             Broadcast broadcast = new Broadcast(rangeHash, info.getSource(), info.getTarget(), info.getTransaction(),
                     info.getHit());
 
-//            try {
-//                this.broadcast(broadcast);
-//            } catch (CommunicationException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                this.broadcast(broadcast);
+            } catch (CommunicationException e) {
+                e.printStackTrace();
+            }
         }
+
         // finally inform application
         if (this.notifyCallback != null) {
             this.notifyCallback.broadcast(info.getSource(), info.getTarget(), info.getHit());
