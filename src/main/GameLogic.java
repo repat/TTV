@@ -60,6 +60,7 @@ public class GameLogic {
         if (chord.getChordImpl().getPredecessorID().compareTo(chord.getChordImpl().getID()) > 0) {
             System.out.println("I start!");
 
+            chord.getMyNotifyCallback().uniquePlayersSectors.put(myID, mySectors);
             shoot();
         }
     }
@@ -75,7 +76,7 @@ public class GameLogic {
      *            the second id,
      * @return array of BigInteger
      */
-    private ID[] calculateSectors(ID from, ID to) {
+    ID[] calculateSectors(ID from, ID to) {
         ID[] result = new ID[I];
         ID distance;
 

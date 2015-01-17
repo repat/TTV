@@ -158,7 +158,11 @@ public final class ID implements Comparable<ID>, Serializable {
 
 	public ID subtract(ID value) {
 		return new ID(toBigInteger().subtract(value.toBigInteger()).toByteArray());
-	}
+    }
+
+    public ID subtract(int value) {
+        return new ID(toBigInteger().subtract(BigInteger.valueOf(value)).toByteArray());
+    }
 
 	public ID multiply(long value) {
 		return new ID(toBigInteger().multiply(BigInteger.valueOf(value)).toByteArray());

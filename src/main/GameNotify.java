@@ -12,11 +12,13 @@ import java.util.Scanner;
 public class GameNotify implements NotifyCallback {
     private GameLogic gameLogic = null;
     private ChordImpl chordImpl = null;
-    private int ship = 10;
+    private int shipsLeft = 10;
     private final List<BroadcastLog> broadcastLog = new ArrayList<>();
-    private final Map<ID, ID> uniquePlayers = new HashMap<>();
+    private final List<ID> uniquePlayers = new ArrayList<>();
+    final Map<ID, ID[]> uniquePlayersSectors = new HashMap<>();
     private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
     private final Map<ID, Integer> hitForID = new HashMap<>();
+    private final Scanner scanner = new Scanner(System.in);
 
     public void setChordClient(GameLogic chordClient, ChordImpl chordImpl) {
         this.gameLogic = chordClient;
@@ -26,17 +28,19 @@ public class GameNotify implements NotifyCallback {
     @Override
     public void retrieved(ID target) {
         handleHit(target);
+        calculateUniquePlayersSectors();
         gameLogic.shoot();
     }
 
     private void handleHit(ID target) {
         ID[] sectors = gameLogic.mySectors;
-        System.out.println("Ships left: " + ship);
+        System.out.println("Ships left: " + shipsLeft);
         for (int i = 0; i < sectors.length - 1; i++) {
             if (target.compareTo(sectors[i]) >= 0 && target.compareTo(sectors[i + 1]) < 0) {
                 if (gameLogic.ships[i]) {
-                    System.out.println("Ship " + ship + " destroyed in sector " + (i + 1));
-                    ship--;
+                    System.out.println("Ship " + shipsLeft + " destroyed in sector " + (i + 1));
+                    shipsLeft--;
+                    gameLogic.ships[i] = false;
                     chordImpl.broadcast(target, Boolean.TRUE);
                     break;
                 } else {
@@ -49,8 +53,9 @@ public class GameNotify implements NotifyCallback {
 
         if (target.compareTo(sectors[sectors.length - 1]) >= 0 && target.compareTo(gameLogic.myID) <= 0) {
             if (gameLogic.ships[sectors.length - 1]) {
-                System.out.println("Ship " + ship + " destroyed in sector 100");
-                ship--;
+                System.out.println("Ship " + shipsLeft + " destroyed in sector 100");
+                shipsLeft--;
+                gameLogic.ships[sectors.length - 1] = false;
                 chordImpl.broadcast(target, Boolean.TRUE);
             } else {
                 System.out.println("no Ship" + " in sector 100");
@@ -58,11 +63,9 @@ public class GameNotify implements NotifyCallback {
             }
         }
 
-        if (ship < 1) {
+        if (shipsLeft < 1) {
             System.out.println("I LOST!");
-            Scanner scanner = new Scanner(System.in);
             scanner.next();
-            scanner.close();
         }
     }
 
@@ -78,30 +81,40 @@ public class GameNotify implements NotifyCallback {
         if (hit) {
             if (hitForID.containsKey(source)) {
                 int tmp = hitForID.get(source);
-                hitForID.put(source, tmp++);
+                hitForID.put(source, ++tmp);
+
+                if (tmp == 10) {
+                    System.out.println("Player " + target + " lost!\nlast seen transaction ID: " + chordImpl.getLastSeenTransactionID());
+                    if (scanner.next().equals("resume")) {
+                        hitForID.put(source, 1);
+                    }
+                }
             } else {
                 hitForID.put(source, 1);
             }
         }
 
-        // wenn wir den spieler schon kennen
-        if (uniquePlayers.containsKey(source)) {
-            // wenn target zwischen dem bekannten target und source sitzt
-            if (!(target.isInInterval(uniquePlayers.get(source), source))) {
-                // source hat schon mal auf's target geschossen -> bloede
-                // strategie -> auf den schiessen wir als naechstes
-                if (uniquePlayers.get(source).equals(target)) {
-                    dumbPlayers.add(source);
-                } else {
-                    // update target
-                    uniquePlayers.remove(source);
-                    uniquePlayers.put(source, target);
-                }
-            }
-        } else {
-            // baue liste mit unique spielern
-            uniquePlayers.put(source, target);
+        if (!uniquePlayers.contains(source)) {
+            uniquePlayers.add(source);
         }
+
+    }
+
+    private void calculateUniquePlayersSectors() {
+        if (uniquePlayers.size() == uniquePlayersSectors.size()) {
+            return;
+        }
+
+        for (int i = 0; i < uniquePlayers.size() - 1; i++) {
+            ID[] newSectors = gameLogic.calculateSectors(
+                    uniquePlayers.get(i), uniquePlayers.get(i + 1));
+            uniquePlayersSectors.put(uniquePlayers.get(i), newSectors);
+        }
+
+        // case for the last player
+        ID[] newSectors = gameLogic.calculateSectors(
+                uniquePlayers.get(uniquePlayers.size() - 1), uniquePlayers.get(0));
+        uniquePlayersSectors.put(uniquePlayers.get(uniquePlayers.size() - 1), newSectors);
 
     }
 

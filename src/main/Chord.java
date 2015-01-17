@@ -10,11 +10,11 @@ public class Chord {
 
     // constants for config
     private static final String PROTOCOL = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
-    private static final String SERVER_IP = "192.168.0.14";
+    private static final String SERVER_IP = "192.168.0.5";
     private static final String SERVER_PORT = "8080";
-    private static final String CLIENT_IP = "192.168.0.5";
+    private static final String CLIENT_IP = "192.168.0.13";
     private static final String CLIENT_PORT = "8181";
-    private static final String joinOrCreate = "join";
+    private static final String joinOrCreate = "create";
 
     // instances of things
     private ChordImpl chordImpl;
@@ -30,7 +30,7 @@ public class Chord {
         } else if (joinOrCreate.equals("create")) {
             createChord();
         } else {
-            System.out.println("ERROR: choose if you want to be server of client!");
+            System.out.println("ERROR: choose if you want to be server or client!");
         }
     }
 
