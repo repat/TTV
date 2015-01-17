@@ -1,9 +1,14 @@
 package main;
 
+import de.uniba.wiai.lspi.chord.com.Node;
 import de.uniba.wiai.lspi.chord.data.ID;
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +65,16 @@ public class GameLogic {
         if (chord.getChordImpl().getPredecessorID().compareTo(chord.getChordImpl().getID()) > 0) {
             System.out.println("I start!");
 
+            // adds us to the unicePlayer sectors
             chord.getMyNotifyCallback().uniquePlayersSectors.put(myID, mySectors);
+
+            // add the fingertables to
+            Set<Node> fingerSet = new HashSet<>(chord.getChordImpl().getFingerTable());
+            for (Node n : fingerSet) {
+                chord.getMyNotifyCallback().uniquePlayers.add(n.getNodeID());
+            }
+            Collections.sort(chord.getMyNotifyCallback().uniquePlayers);
+
             shoot();
         }
     }
@@ -118,34 +132,64 @@ public class GameLogic {
         System.out.println();
         Random rnd = new Random();
         long sectorNumber;
-        ID sectorSize = BIGGEST_ID.divide(I * NUMBER_OF_PLAYERS);
         ID target;
+        List<ID> shootableSectors = chord.getMyNotifyCallback().shootableSectors;
 
         do {
-            // number of sectors * players
-            sectorNumber = rnd.nextInt(I * NUMBER_OF_PLAYERS);
-            target = sectorSize.multiply(sectorNumber).add((sectorSize.divide(MIDDLE))).mod(BIGGEST_ID);
-            // System.out.println(".");
-        } while (isInMyInterval(target) || isAlreadyHit(target));
+            sectorNumber = rnd.nextInt(shootableSectors.size());
+            target = shootableSectors.get((int) sectorNumber);
+
+        } while (selfShooting(target));
 
         System.out.println("shooting at: " + target.toBigInteger());
         RetrieveThread retrieve = new RetrieveThread(chord.getChordImpl(), target);
         retrieve.start();
     }
 
-    private boolean isInMyInterval(ID id) {
-        boolean result = id.isInInterval(mySectors[0], myID);
-        return result;
+    boolean selfShooting(ID target) {
+        System.out.println("self shooting prevented");
+        return target.isInInterval(mySectors[0], myID);
     }
 
-    private boolean isAlreadyHit(ID id) {
-        for (BroadcastLog b : chord.getMyNotifyCallback().getBroadcastLog()) {
-            if (b.getTarget().equals(id)) {
-                System.out.println("looking for a target but already shot at this particular target, no I'm not shooting there again!");
-                return true;
+//    private boolean isIdAlreadyHit(ID target) {
+//        for (BroadcastLog b : chord.getMyNotifyCallback().broadcastLog) {
+//            if (b.getTarget().equals(target)) {
+//                System.out.println("looking for a target but already shot at this particular target, no I'm not shooting there again!");
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
+
+    int isInSector(ID target, ID[] sector) {
+        if (!target.isInInterval(sector[0], sector[sector.length - 1])) {
+            return -1;
+        }
+
+        for (int i = 0; i < sector.length - 1; i++) {
+
+            if (target.compareTo(sector[i]) >= 0 && target.compareTo(sector[i + 1]) < 0) {
+                return i;
             }
         }
-        return false;
+
+        if (target.compareTo(sector[sector.length - 1]) >= 0 && target.compareTo(findNextPlayer(target)) < 0) {
+            return sector.length - 1;
+        }
+
+        return -1;
+    }
+
+    public ID findNextPlayer(ID target) {
+        List<ID> uniquePlayers = chord.getMyNotifyCallback().uniquePlayers;
+        Collections.sort(uniquePlayers);
+
+        for (int i = 0; i < uniquePlayers.size() - 1; i++) {
+            if (target.isInInterval(uniquePlayers.get(i), uniquePlayers.get(i + 1))) {
+                return uniquePlayers.get(i + 1);
+            }
+        }
+        return uniquePlayers.get(0);
     }
 
 }

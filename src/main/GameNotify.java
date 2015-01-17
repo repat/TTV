@@ -13,9 +13,10 @@ public class GameNotify implements NotifyCallback {
     private GameLogic gameLogic = null;
     private ChordImpl chordImpl = null;
     private int shipsLeft = 10;
-    private final List<BroadcastLog> broadcastLog = new ArrayList<>();
-    private final List<ID> uniquePlayers = new ArrayList<>();
+    final List<BroadcastLog> broadcastLog = new ArrayList<>();
+    final List<ID> uniquePlayers = new ArrayList<>();
     final Map<ID, ID[]> uniquePlayersSectors = new HashMap<>();
+    final List<ID> shootableSectors = new ArrayList<>();
     private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
     private final Map<ID, Integer> hitForID = new HashMap<>();
     private final Scanner scanner = new Scanner(System.in);
@@ -29,6 +30,7 @@ public class GameNotify implements NotifyCallback {
     public void retrieved(ID target) {
         handleHit(target);
         calculateUniquePlayersSectors();
+        calculateShootableSectors();
         gameLogic.shoot();
     }
 
@@ -97,7 +99,6 @@ public class GameNotify implements NotifyCallback {
         if (!uniquePlayers.contains(source)) {
             uniquePlayers.add(source);
         }
-
     }
 
     private void calculateUniquePlayersSectors() {
@@ -115,11 +116,18 @@ public class GameNotify implements NotifyCallback {
         ID[] newSectors = gameLogic.calculateSectors(
                 uniquePlayers.get(uniquePlayers.size() - 1), uniquePlayers.get(0));
         uniquePlayersSectors.put(uniquePlayers.get(uniquePlayers.size() - 1), newSectors);
-
     }
 
-    public List<BroadcastLog> getBroadcastLog() {
-        return broadcastLog;
+    private void calculateShootableSectors() {
+        for (BroadcastLog bl : broadcastLog.toArray(new BroadcastLog[0])) {
+            for (int i = 0; i < uniquePlayers.size(); i++) {
+                ID[] sectors = uniquePlayersSectors.get(uniquePlayers.get(i));
+                int index = gameLogic.isInSector(bl.getTarget(), sectors);
+                if (index != -1) {
+                    shootableSectors.add(sectors[index]);
+                }
+            }
+        }
     }
 
 }

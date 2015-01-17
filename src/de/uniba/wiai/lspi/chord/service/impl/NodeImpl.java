@@ -429,8 +429,8 @@ public final class NodeImpl extends Node {
         }
 
         // sort unique FingerTable
-        List<Node> fingerTable = new ArrayList<Node>();
-        Set<Node> fingerSet = new HashSet<Node>(this.references.getFingerTableEntries());
+        List<Node> fingerTable = new ArrayList<>();
+        Set<Node> fingerSet = new HashSet<>(this.references.getFingerTableEntries());
 
         for (Node n : fingerSet) {
             fingerTable.add(n);
