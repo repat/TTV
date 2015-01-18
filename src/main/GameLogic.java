@@ -14,9 +14,8 @@ import java.util.logging.Logger;
 
 public class GameLogic {
     // constants for config
-    private static final int NUMBER_OF_PLAYERS = 2;
     private static final int S = 10; // number of ships
-    private static final int I = 100; // number of mySectors
+    static final int I = 100; // number of mySectors
     private static final int WAITING_TIME_CHORD_JOIN = 5000;
     private static final int MIDDLE = 2;
     private static final ID BIGGEST_ID = new ID(BigInteger.valueOf(2).pow(160).subtract(BigInteger.ONE).toByteArray());
@@ -61,20 +60,22 @@ public class GameLogic {
         mySectors = calculateSectors(chord.getChordImpl().getPredecessorID(), myID);
         setShips();
 
+        // adds us to the unicePlayer sectors
+        chord.getMyNotifyCallback().uniquePlayersSectors.put(myID, mySectors);
+
+        // add the fingertables to
+        Set<Node> fingerSet = new HashSet<>(chord.getChordImpl().getFingerTable());
+        for (Node n : fingerSet) {
+            chord.getMyNotifyCallback().uniquePlayers.add(n.getNodeID());
+        }
+        Collections.sort(chord.getMyNotifyCallback().uniquePlayers);
+
         // we start the game if we have the BIGGESTID
         if (chord.getChordImpl().getPredecessorID().compareTo(chord.getChordImpl().getID()) > 0) {
             System.out.println("I start!");
 
-            // adds us to the unicePlayer sectors
-            chord.getMyNotifyCallback().uniquePlayersSectors.put(myID, mySectors);
-
-            // add the fingertables to
-            Set<Node> fingerSet = new HashSet<>(chord.getChordImpl().getFingerTable());
-            for (Node n : fingerSet) {
-                chord.getMyNotifyCallback().uniquePlayers.add(n.getNodeID());
-            }
-            Collections.sort(chord.getMyNotifyCallback().uniquePlayers);
-
+            chord.getMyNotifyCallback().calculateUniquePlayersSectors();
+            chord.getMyNotifyCallback().calculateShootableSectors();
             shoot();
         }
     }

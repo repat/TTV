@@ -101,7 +101,7 @@ public class GameNotify implements NotifyCallback {
         }
     }
 
-    private void calculateUniquePlayersSectors() {
+    void calculateUniquePlayersSectors() {
         if (uniquePlayers.size() == uniquePlayersSectors.size()) {
             return;
         }
@@ -118,13 +118,22 @@ public class GameNotify implements NotifyCallback {
         uniquePlayersSectors.put(uniquePlayers.get(uniquePlayers.size() - 1), newSectors);
     }
 
-    private void calculateShootableSectors() {
+    void calculateShootableSectors() {
+
+        // fill List
+        for (int i = 0; i < uniquePlayers.size(); i++) {
+            for (int j = 0; j < gameLogic.I; j++) {
+                shootableSectors.add(uniquePlayersSectors.get(uniquePlayers.get(i))[j]);
+            }
+        }
+
+        // remove fields, that are destroyed
         for (BroadcastLog bl : broadcastLog.toArray(new BroadcastLog[0])) {
             for (int i = 0; i < uniquePlayers.size(); i++) {
                 ID[] sectors = uniquePlayersSectors.get(uniquePlayers.get(i));
                 int index = gameLogic.isInSector(bl.getTarget(), sectors);
                 if (index != -1) {
-                    shootableSectors.add(sectors[index]);
+                    shootableSectors.remove(sectors[index]);
                 }
             }
         }
