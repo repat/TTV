@@ -61,7 +61,7 @@ public class GameLogic {
         setShips();
 
         // adds us to the unicePlayer sectors
-        chord.getMyNotifyCallback().uniquePlayersSectors.put(myID, mySectors);
+        chord.getMyNotifyCallback().uniquePlayers.add(myID);
 
         // add the fingertables to
         Set<Node> fingerSet = new HashSet<>(chord.getChordImpl().getFingerTable());
@@ -138,28 +138,23 @@ public class GameLogic {
         ID distance;
         List<ID> shootableSectors = chord.getMyNotifyCallback().shootableSectors;
 
-        do {
-            sectorNumber = rnd.nextInt(shootableSectors.size());
-            target = shootableSectors.get(sectorNumber);
-            targetNext = shootableSectors.get(sectorNumber + 1);
+        sectorNumber = rnd.nextInt(shootableSectors.size());
+        target = shootableSectors.get(sectorNumber);
 
-            if (target.compareTo(targetNext) < 0) {
-                distance = targetNext.subtract(target);
-            } else {
-                distance = BIGGEST_ID.subtract(target).add(targetNext);
-            }
+        // TODO: needs to derive from actual next ID
+//        targetNext = shootableSectors.get(sectorNumber + 1);
+//
+//        if (target.compareTo(targetNext) < 0) {
+//            distance = targetNext.subtract(target);
+//        } else {
+//            distance = BIGGEST_ID.subtract(target).add(targetNext);
+//        }
 
-        } while (selfShooting(target));
 
         System.out.println("shooting at: " + target.toBigInteger());
         RetrieveThread retrieve = new RetrieveThread(chord.getChordImpl(),
-                target.add(distance.divide(MIDDLE)));
+                target.add(10));
         retrieve.start();
-    }
-
-    boolean selfShooting(ID target) {
-        System.out.println("self shooting prevented");
-        return target.isInInterval(mySectors[0], myID);
     }
 
 //    private boolean isIdAlreadyHit(ID target) {

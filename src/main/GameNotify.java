@@ -16,7 +16,7 @@ public class GameNotify implements NotifyCallback {
     final List<BroadcastLog> broadcastLog = new ArrayList<>();
     final List<ID> uniquePlayers = new ArrayList<>();
     final Map<ID, ID[]> uniquePlayersSectors = new HashMap<>();
-    final List<ID> shootableSectors = new ArrayList<>();
+    List<ID> shootableSectors = new ArrayList<>();
     private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
     private final Map<ID, Integer> hitForID = new HashMap<>();
     private final Scanner scanner = new Scanner(System.in);
@@ -67,7 +67,6 @@ public class GameNotify implements NotifyCallback {
 
         if (shipsLeft < 1) {
             System.out.println("I LOST!");
-            scanner.next();
         }
     }
 
@@ -87,9 +86,6 @@ public class GameNotify implements NotifyCallback {
 
                 if (tmp == 10) {
                     System.out.println("Player " + target + " lost!\nlast seen transaction ID: " + chordImpl.getLastSeenTransactionID());
-                    if (scanner.next().equals("resume")) {
-                        hitForID.put(source, 1);
-                    }
                 }
             } else {
                 hitForID.put(source, 1);
@@ -120,23 +116,32 @@ public class GameNotify implements NotifyCallback {
 
     void calculateShootableSectors() {
 
+        shootableSectors = new ArrayList<>();
+
         // fill List
-        for (int i = 0; i < uniquePlayers.size(); i++) {
+        for (ID uniquePlayer : uniquePlayers) {
             for (int j = 0; j < gameLogic.I; j++) {
-                shootableSectors.add(uniquePlayersSectors.get(uniquePlayers.get(i))[j]);
+                shootableSectors.add(uniquePlayersSectors.get(uniquePlayer)[j]);
             }
         }
 
         // remove fields, that are destroyed
         for (BroadcastLog bl : broadcastLog.toArray(new BroadcastLog[0])) {
-            for (int i = 0; i < uniquePlayers.size(); i++) {
-                ID[] sectors = uniquePlayersSectors.get(uniquePlayers.get(i));
+            for (ID uniquePlayer : uniquePlayers) {
+                ID[] sectors = uniquePlayersSectors.get(uniquePlayer);
                 int index = gameLogic.isInSector(bl.getTarget(), sectors);
                 if (index != -1) {
                     shootableSectors.remove(sectors[index]);
                 }
             }
         }
+
+        // remove own fielde
+        for (ID id : gameLogic.mySectors) {
+            shootableSectors.remove(id);
+        }
+
+        System.out.println("Number of shootable sectors: " + shootableSectors.size());
     }
 
 }

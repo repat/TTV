@@ -417,8 +417,8 @@ public final class NodeImpl extends Node {
 
         // lastSeenTransactionID updaten
         if (impl.getLastSeenTransactionID() < info.getTransaction()) {
-            System.out.println("info.getTransaction(): " + info.getTransaction());
-            System.out.println("impl.getLastSeenTransactionID(): " + impl.getLastSeenTransactionID());
+//            System.out.println("info.getTransaction(): " + info.getTransaction());
+//            System.out.println("impl.getLastSeenTransactionID(): " + impl.getLastSeenTransactionID());
             impl.setLastSeenTransactionID(info.getTransaction());
             return;
         }
