@@ -7,7 +7,9 @@ import java.util.Map;
 import de.uniba.wiai.lspi.chord.data.ID;
 import de.uniba.wiai.lspi.chord.service.NotifyCallback;
 import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
-import java.util.Scanner;
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GameNotify implements NotifyCallback {
     private GameLogic gameLogic = null;
@@ -17,9 +19,8 @@ public class GameNotify implements NotifyCallback {
     final List<ID> uniquePlayers = new ArrayList<>();
     final Map<ID, ID[]> uniquePlayersSectors = new HashMap<>();
     List<ID> shootableSectors = new ArrayList<>();
-    private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
+//    private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
     private final Map<ID, Integer> hitForID = new HashMap<>();
-    private final Scanner scanner = new Scanner(System.in);
 
     public void setChordClient(GameLogic chordClient, ChordImpl chordImpl) {
         this.gameLogic = chordClient;
@@ -67,13 +68,16 @@ public class GameNotify implements NotifyCallback {
 
         if (shipsLeft < 1) {
             System.out.println("I LOST!");
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(GameNotify.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
     @Override
     public void broadcast(ID source, ID target, Boolean hit) {
-//        System.out.println("Broadcast empfangen: src:" + source.toHexString() + ", target:" + target.toHexString()
-//                + " hit:" + hit);
         int transactionID = chordImpl.getLastSeenTransactionID();
 
         // chordImpl.setLastSeenTransactionID(transactionID);
@@ -86,6 +90,11 @@ public class GameNotify implements NotifyCallback {
 
                 if (tmp == 10) {
                     System.out.println("Player " + target + " lost!\nlast seen transaction ID: " + chordImpl.getLastSeenTransactionID());
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(GameNotify.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             } else {
                 hitForID.put(source, 1);
@@ -95,6 +104,7 @@ public class GameNotify implements NotifyCallback {
         if (!uniquePlayers.contains(source)) {
             uniquePlayers.add(source);
         }
+        Collections.sort(uniquePlayers);
     }
 
     void calculateUniquePlayersSectors() {

@@ -132,40 +132,55 @@ public class GameLogic {
     void shoot() {
         System.out.println();
         Random rnd = new Random();
-        int sectorNumber;
-        ID target;
-        ID targetNext;
-        ID distance;
+
         List<ID> shootableSectors = chord.getMyNotifyCallback().shootableSectors;
 
-        sectorNumber = rnd.nextInt(shootableSectors.size());
-        target = shootableSectors.get(sectorNumber);
+        int sectorNumber = rnd.nextInt(shootableSectors.size());
+        ID target = shootableSectors.get(sectorNumber);
 
-        // TODO: needs to derive from actual next ID
-//        targetNext = shootableSectors.get(sectorNumber + 1);
+        // doesn't work
+//        ID targetNext = calculateNextSector(target);
+//        ID distance;
 //
 //        if (target.compareTo(targetNext) < 0) {
-//            distance = targetNext.subtract(target);
+//            distance = targetNext.subtract(target).divide(MIDDLE);
 //        } else {
-//            distance = BIGGEST_ID.subtract(target).add(targetNext);
+//            distance = BIGGEST_ID.subtract(target).add(targetNext).divide(MIDDLE);
 //        }
-
+//        ID middleOfSector = target.add(distance).mod(BIGGEST_ID);
+        ID middleOfSector = target.add(10).mod(BIGGEST_ID);
 
         System.out.println("shooting at: " + target.toBigInteger());
-        RetrieveThread retrieve = new RetrieveThread(chord.getChordImpl(),
-                target.add(10));
+        RetrieveThread retrieve = new RetrieveThread(chord.getChordImpl(), middleOfSector);
         retrieve.start();
     }
 
-//    private boolean isIdAlreadyHit(ID target) {
-//        for (BroadcastLog b : chord.getMyNotifyCallback().broadcastLog) {
-//            if (b.getTarget().equals(target)) {
-//                System.out.println("looking for a target but already shot at this particular target, no I'm not shooting there again!");
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
+    ID calculateNextSector(ID sector) {
+        List<ID> uniquePlayers = chord.getMyNotifyCallback().uniquePlayers;
+
+        for (int i = 0; i < uniquePlayers.size(); i++) {
+            ID[] uniquePlayersSectors = chord.getMyNotifyCallback().uniquePlayersSectors.get(uniquePlayers.get(i));
+            int sectorNumber = isInSector(sector, uniquePlayersSectors);
+
+            System.out.println("Sector nr: " + sectorNumber);
+
+            if (sectorNumber != -1) {
+                if (sectorNumber < uniquePlayersSectors.length - 1) {
+                    // next sector of the same player
+                    return uniquePlayersSectors[i + 1];
+                } else if (i < uniquePlayers.size() - 1) {
+                    // first sector of the next player
+                    return uniquePlayers.get(i + 1);
+                } else {
+                    // return the first sector of the first player
+                    return uniquePlayers.get(0);
+                }
+            }
+        }
+        // should not happen
+        System.out.println("ERROR: next Sector is null");
+        return null;
+    }
 
     int isInSector(ID target, ID[] sector) {
         if (!target.isInInterval(sector[0], sector[sector.length - 1])) {
@@ -173,7 +188,6 @@ public class GameLogic {
         }
 
         for (int i = 0; i < sector.length - 1; i++) {
-
             if (target.compareTo(sector[i]) >= 0 && target.compareTo(sector[i + 1]) < 0) {
                 return i;
             }
