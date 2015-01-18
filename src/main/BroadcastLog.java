@@ -2,6 +2,9 @@ package main;
 
 import de.uniba.wiai.lspi.chord.data.ID;
 
+/**
+ * stores the broadcasts we received. It is just a helper class with constructor and getter/setter
+ */
 public class BroadcastLog {
 
     private ID source;

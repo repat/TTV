@@ -30,6 +30,12 @@ public class GameLogic {
         return this;
     }
 
+    /**
+     * initialises the game
+     *
+     * @param args
+     * @throws InterruptedException might be called by Thread.sleep
+     */
     public static void main(String[] args) throws InterruptedException {
         GameLogic cc = new GameLogic();
         chord = new Chord(cc);
@@ -39,6 +45,9 @@ public class GameLogic {
         cc.startGame();
     }
 
+    /**
+     * starts up the actual game
+     */
     private void startGame() {
         Scanner scanner = new Scanner(System.in);
             // start the game after s was typed in
@@ -85,10 +94,8 @@ public class GameLogic {
      * this into I Sectors. Also handles the case if the predecessor has a
      * bigger id than we do.
      *
-     * @param from
-     *            the first id, thinking circle clockwise
-     * @param to
-     *            the second id,
+     * @param from the first id, thinking circle clockwise
+     * @param to the second id,
      * @return array of BigInteger
      */
     ID[] calculateSectors(ID from, ID to) {
@@ -129,6 +136,9 @@ public class GameLogic {
         }
     }
 
+    /**
+     * handles the shooting of our enemies
+     */
     void shoot() {
         System.out.println();
         Random rnd = new Random();
@@ -155,6 +165,13 @@ public class GameLogic {
         retrieve.start();
     }
 
+    /**
+     * calculates the next sector for an ID. This is needed to be able to shoot in the middle of a
+     * sector.
+     *
+     * @param sector
+     * @return
+     */
     ID calculateNextSector(ID sector) {
         List<ID> uniquePlayers = chord.getMyNotifyCallback().uniquePlayers;
 
@@ -182,6 +199,13 @@ public class GameLogic {
         return null;
     }
 
+    /**
+     * Checks if the target is inside the Sector boundaries.
+     *
+     * @param target target ID
+     * @param sector Array of IDs
+     * @return
+     */
     int isInSector(ID target, ID[] sector) {
         if (!target.isInInterval(sector[0], sector[sector.length - 1])) {
             return -1;
@@ -200,6 +224,12 @@ public class GameLogic {
         return -1;
     }
 
+    /**
+     * returns the ID of the next player
+     *
+     * @param target
+     * @return
+     */
     public ID findNextPlayer(ID target) {
         List<ID> uniquePlayers = chord.getMyNotifyCallback().uniquePlayers;
         Collections.sort(uniquePlayers);

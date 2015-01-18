@@ -14,7 +14,7 @@ public class Chord {
     private static final String SERVER_PORT = "8080";
     private static final String CLIENT_IP = "192.168.0.13";
     private static final String CLIENT_PORT = "8181";
-    private static final String joinOrCreate = "create";
+    private static final String joinOrCreate = "create"; // "join" and "create" are valid
 
     // instances of things
     private ChordImpl chordImpl;
@@ -24,6 +24,9 @@ public class Chord {
         this.gameLogic = gameLogic;
     }
 
+    /**
+     * Creates or joins a chord Network.
+     */
     public void init() {
         if (joinOrCreate.equals("join")) {
             joinChord();
@@ -34,6 +37,9 @@ public class Chord {
         }
     }
 
+    /**
+     * creates the chord Network.
+     */
     private void createChord() {
         if (!PropertiesLoader.isLoaded()) {
             PropertiesLoader.loadPropertyFile();
@@ -97,6 +103,8 @@ public class Chord {
         System.out.println("Chord running on: " + localURL);
         // System.out.println("Chord joined: " + bootstrapURL + "\n");
     }
+
+    // Getter and setter
 
     public ChordImpl getChordImpl() {
         return chordImpl;

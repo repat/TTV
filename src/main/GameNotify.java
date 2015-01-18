@@ -12,14 +12,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class GameNotify implements NotifyCallback {
-    private GameLogic gameLogic = null;
-    private ChordImpl chordImpl = null;
-    private int shipsLeft = 10;
+    // package private members
     final List<BroadcastLog> broadcastLog = new ArrayList<>();
     final List<ID> uniquePlayers = new ArrayList<>();
     final Map<ID, ID[]> uniquePlayersSectors = new HashMap<>();
     List<ID> shootableSectors = new ArrayList<>();
-//    private final List<ID> dumbPlayers = new ArrayList<>(); // müssen wir noch nutzen
+
+    //private members
+    private GameLogic gameLogic = null;
+    private ChordImpl chordImpl = null;
+    private int shipsLeft = 10;
     private final Map<ID, Integer> hitForID = new HashMap<>();
 
     public void setChordClient(GameLogic chordClient, ChordImpl chordImpl) {
@@ -27,6 +29,11 @@ public class GameNotify implements NotifyCallback {
         this.chordImpl = chordImpl;
     }
 
+    /**
+     * gets called, when someone shoots at us. It calls the proper methods to continue.
+     *
+     * @param target is the target ID
+     */
     @Override
     public void retrieved(ID target) {
         handleHit(target);
@@ -35,6 +42,11 @@ public class GameNotify implements NotifyCallback {
         gameLogic.shoot();
     }
 
+    /**
+     * checks if one of our ships was in the targeted sector
+     *
+     * @param target is the target ID
+     */
     private void handleHit(ID target) {
         ID[] sectors = gameLogic.mySectors;
         System.out.println("Ships left: " + shipsLeft);
@@ -76,6 +88,13 @@ public class GameNotify implements NotifyCallback {
         }
     }
 
+    /**
+     * This is the callback method for fired shots. It informs as about the battle status.
+     *
+     * @param source player who is under fire
+     * @param target the targeted sector of source
+     * @param hit was the shot a hit or not
+     */
     @Override
     public void broadcast(ID source, ID target, Boolean hit) {
         int transactionID = chordImpl.getLastSeenTransactionID();
@@ -107,6 +126,9 @@ public class GameNotify implements NotifyCallback {
         Collections.sort(uniquePlayers);
     }
 
+    /**
+     * calculates the 100 sectors for every player, if it has changed since it was last called
+     */
     void calculateUniquePlayersSectors() {
         if (uniquePlayers.size() == uniquePlayersSectors.size()) {
             return;
@@ -124,6 +146,9 @@ public class GameNotify implements NotifyCallback {
         uniquePlayersSectors.put(uniquePlayers.get(uniquePlayers.size() - 1), newSectors);
     }
 
+    /**
+     * regenerates the ArrayList of potential target sectors
+     */
     void calculateShootableSectors() {
 
         shootableSectors = new ArrayList<>();
