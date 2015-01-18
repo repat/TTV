@@ -131,18 +131,28 @@ public class GameLogic {
     void shoot() {
         System.out.println();
         Random rnd = new Random();
-        long sectorNumber;
+        int sectorNumber;
         ID target;
+        ID targetNext;
+        ID distance;
         List<ID> shootableSectors = chord.getMyNotifyCallback().shootableSectors;
 
         do {
             sectorNumber = rnd.nextInt(shootableSectors.size());
-            target = shootableSectors.get((int) sectorNumber);
+            target = shootableSectors.get(sectorNumber);
+            targetNext = shootableSectors.get(sectorNumber + 1);
+
+            if (target.compareTo(targetNext) < 0) {
+                distance = targetNext.subtract(target);
+            } else {
+                distance = BIGGEST_ID.subtract(target).add(targetNext);
+            }
 
         } while (selfShooting(target));
 
         System.out.println("shooting at: " + target.toBigInteger());
-        RetrieveThread retrieve = new RetrieveThread(chord.getChordImpl(), target);
+        RetrieveThread retrieve = new RetrieveThread(chord.getChordImpl(),
+                target.add(distance.divide(MIDDLE)));
         retrieve.start();
     }
 
